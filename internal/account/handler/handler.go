@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"context"
+	"expent-backend/internal/account/service"
 	"expent-backend/internal/shared"
-	"expent-backend/internal/transaction/model"
-	"expent-backend/internal/transaction/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,24 +17,27 @@ func NewHandler(svc *service.Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// ListTransactions GET /transactions
-func (h *Handler) ListTransactions(c *gin.Context) {
+// ListAccounts GET /accounts
+func (h *Handler) ListAccounts(c *gin.Context) {
 	userID, ok := c.Get("userId")
 	if !ok {
 		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
-	txs, err := h.svc.ListTransactions(c.Request.Context(), userID.(string))
+	accounts, err := h.svc.ListAccounts(context.Background(), userID.(string))
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Transactions fetched", txs)
+	shared.SuccessResponse(c, "Accounts fetched", accounts)
 }
 
-// CreateTransaction POST /transactions
-func (h *Handler) CreateTransaction(c *gin.Context) {
-	var req model.Transaction
+// CreateAccount POST /accounts
+func (h *Handler) CreateAccount(c *gin.Context) {
+	var req struct {
+		Name string `json:"name" binding:"required"`
+		Type string `json:"type" binding:"required"`
+	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
 		return
@@ -44,26 +47,25 @@ func (h *Handler) CreateTransaction(c *gin.Context) {
 		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
-	req.UserID = userID.(string)
-	tx, err := h.svc.CreateTransaction(c.Request.Context(), req)
+	acc, err := h.svc.CreateAccount(context.Background(), userID.(string), req.Name, req.Type)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Transaction created", tx)
+	shared.SuccessResponse(c, "Account created", acc)
 }
 
-// DeleteTransaction DELETE /transactions/:id
-func (h *Handler) DeleteTransaction(c *gin.Context) {
-	txID := c.Param("id")
+// DeleteAccount DELETE /accounts/:id
+func (h *Handler) DeleteAccount(c *gin.Context) {
+	accID := c.Param("id")
 	userID, ok := c.Get("userId")
 	if !ok {
 		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
-	if err := h.svc.DeleteTransaction(c.Request.Context(), userID.(string), txID); err != nil {
+	if err := h.svc.DeleteAccount(context.Background(), userID.(string), accID); err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Transaction deleted", nil)
+	shared.SuccessResponse(c, "Account deleted", nil)
 }
