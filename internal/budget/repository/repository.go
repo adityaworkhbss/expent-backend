@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"time"
 	"expent-backend/internal/budget/model"
 	"expent-backend/internal/infrastructure/prisma"
 	"expent-backend/prisma/db"
@@ -12,6 +11,7 @@ type Repository interface {
 	ListBudgets(userID string) ([]model.Budget, error)
 	CreateBudget(budget model.Budget) (*model.Budget, error)
 	GetBudgetByID(id string) (*model.Budget, error)
+	UpdateBudget(id string, budget model.Budget) (*model.Budget, error)
 	DeleteBudget(id string) error
 }
 
@@ -32,7 +32,17 @@ func (r *repoImpl) ListBudgets(userID string) ([]model.Budget, error) {
 	}
 	var result []model.Budget
 	for _, b := range bs {
-		result = append(result, model.Budget{ID: b.ID, UserID: b.UserID, CategoryID: b.CategoryID, Amount: b.LimitAmount, Period: b.PeriodType})
+		result = append(result, model.Budget{
+			ID:           b.ID,
+			UserID:       b.UserID,
+			CategoryID:   b.CategoryID,
+			Amount:       b.LimitAmount,
+			Period:       b.PeriodType,
+			StartDate:    b.StartDate,
+			EndDate:      b.EndDate,
+			StartDateStr: b.StartDate.Format("2006-01-02"),
+			EndDateStr:   b.EndDate.Format("2006-01-02"),
+		})
 	}
 	return result, nil
 }
@@ -41,15 +51,25 @@ func (r *repoImpl) CreateBudget(budget model.Budget) (*model.Budget, error) {
 	b, err := r.prisma.Prisma.Budget.CreateOne(
 		db.Budget.PeriodType.Set(budget.Period),
 		db.Budget.LimitAmount.Set(budget.Amount),
-		db.Budget.StartDate.Set(time.Now()), // placeholder
-		db.Budget.EndDate.Set(time.Now().Add(30*24*time.Hour)), // placeholder
+		db.Budget.StartDate.Set(budget.StartDate),
+		db.Budget.EndDate.Set(budget.EndDate),
 		db.Budget.User.Link(db.User.ID.Equals(budget.UserID)),
 		db.Budget.Category.Link(db.Category.ID.Equals(budget.CategoryID)),
 	).Exec(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	return &model.Budget{ID: b.ID, UserID: b.UserID, CategoryID: b.CategoryID, Amount: b.LimitAmount, Period: b.PeriodType}, nil
+	return &model.Budget{
+		ID:           b.ID,
+		UserID:       b.UserID,
+		CategoryID:   b.CategoryID,
+		Amount:       b.LimitAmount,
+		Period:       b.PeriodType,
+		StartDate:    b.StartDate,
+		EndDate:      b.EndDate,
+		StartDateStr: b.StartDate.Format("2006-01-02"),
+		EndDateStr:   b.EndDate.Format("2006-01-02"),
+	}, nil
 }
 
 func (r *repoImpl) GetBudgetByID(id string) (*model.Budget, error) {
@@ -62,7 +82,43 @@ func (r *repoImpl) GetBudgetByID(id string) (*model.Budget, error) {
 		}
 		return nil, err
 	}
-	return &model.Budget{ID: b.ID, UserID: b.UserID, CategoryID: b.CategoryID, Amount: b.LimitAmount, Period: b.PeriodType}, nil
+	return &model.Budget{
+		ID:           b.ID,
+		UserID:       b.UserID,
+		CategoryID:   b.CategoryID,
+		Amount:       b.LimitAmount,
+		Period:       b.PeriodType,
+		StartDate:    b.StartDate,
+		EndDate:      b.EndDate,
+		StartDateStr: b.StartDate.Format("2006-01-02"),
+		EndDateStr:   b.EndDate.Format("2006-01-02"),
+	}, nil
+}
+
+func (r *repoImpl) UpdateBudget(id string, budget model.Budget) (*model.Budget, error) {
+	b, err := r.prisma.Prisma.Budget.FindUnique(
+		db.Budget.ID.Equals(id),
+	).Update(
+		db.Budget.PeriodType.Set(budget.Period),
+		db.Budget.LimitAmount.Set(budget.Amount),
+		db.Budget.StartDate.Set(budget.StartDate),
+		db.Budget.EndDate.Set(budget.EndDate),
+		db.Budget.Category.Link(db.Category.ID.Equals(budget.CategoryID)),
+	).Exec(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return &model.Budget{
+		ID:           b.ID,
+		UserID:       b.UserID,
+		CategoryID:   b.CategoryID,
+		Amount:       b.LimitAmount,
+		Period:       b.PeriodType,
+		StartDate:    b.StartDate,
+		EndDate:      b.EndDate,
+		StartDateStr: b.StartDate.Format("2006-01-02"),
+		EndDateStr:   b.EndDate.Format("2006-01-02"),
+	}, nil
 }
 
 func (r *repoImpl) DeleteBudget(id string) error {

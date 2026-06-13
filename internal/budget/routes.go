@@ -17,5 +17,6 @@ func RegisterRoutes(rg *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	budGroup := rg.Group("/budgets")
 	budGroup.GET("", h.ListBudgets)
 	budGroup.POST("", h.CreateBudget)
+	budGroup.PUT("/:id", h.UpdateBudget)
 	budGroup.DELETE("/:id", h.DeleteBudget)
 }

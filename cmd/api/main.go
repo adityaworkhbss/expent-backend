@@ -18,6 +18,8 @@ import (
     "expent-backend/internal/dashboard"
     "expent-backend/internal/transaction"
     parsetransaction "expent-backend/internal/parse_transaction"
+    usercustomization "expent-backend/internal/user_customization"
+    "expent-backend/internal/emi"
 )
 
 func main() {
@@ -63,6 +65,8 @@ func main() {
     transaction.RegisterRoutes(protected, prismaClient)
     parsetransaction.RegisterRoutes(protected)
     dashboard.RegisterRoutes(protected)
+    usercustomization.RegisterRoutes(protected, prismaClient)
+    emi.RegisterRoutes(protected, prismaClient)
 
     // Start server
     port := configs.AppConfig.PORT

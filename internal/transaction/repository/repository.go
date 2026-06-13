@@ -2,13 +2,14 @@ package repository
 
 import (
 	"context"
+	"time"
 	"expent-backend/internal/transaction/model"
 	"expent-backend/internal/infrastructure/prisma"
 	"expent-backend/prisma/db"
 )
 
 type Repository interface {
-	ListTransactions(userID string) ([]model.Transaction, error)
+	ListTransactions(userID string, from, to *time.Time, page, limit *int) ([]model.Transaction, int, error)
 	CreateTransaction(t model.Transaction) (*model.Transaction, error)
 	GetTransactionByID(id string) (*model.Transaction, error)
 	DeleteTransaction(id string) error
@@ -22,24 +23,71 @@ func NewRepository(prismaClient *prisma.PrismaClient) Repository {
 	return &repoImpl{prisma: prismaClient}
 }
 
-func (r *repoImpl) ListTransactions(userID string) ([]model.Transaction, error) {
-	ts, err := r.prisma.Prisma.Transaction.FindMany(
-		db.Transaction.UserID.Equals(userID),
-	).Exec(context.Background())
-	if err != nil {
-		return nil, err
+func (r *repoImpl) ListTransactions(userID string, from, to *time.Time, page, limit *int) ([]model.Transaction, int, error) {
+	ctx := context.Background()
+
+	// Base conditions
+	var queryConditions []db.TransactionWhereParam
+	queryConditions = append(queryConditions, db.Transaction.UserID.Equals(userID))
+
+	if from != nil {
+		queryConditions = append(queryConditions, db.Transaction.Date.Gte(*from))
 	}
+	if to != nil {
+		queryConditions = append(queryConditions, db.Transaction.Date.Lte(*to))
+	}
+
+	// Count total
+	allTs, err := r.prisma.Prisma.Transaction.FindMany(queryConditions...).Exec(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	total := len(allTs)
+
+	// Find many with ordering and pagination
+	findQuery := r.prisma.Prisma.Transaction.FindMany(queryConditions...).OrderBy(
+		db.Transaction.Date.Order(db.SortOrderDesc),
+	)
+
+	if page != nil && limit != nil {
+		skip := (*page - 1) * (*limit)
+		findQuery = findQuery.Skip(skip).Take(*limit)
+	}
+
+	ts, err := findQuery.Exec(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	var result []model.Transaction
 	for _, t := range ts {
-		result = append(result, model.Transaction{ID: t.ID, UserID: t.UserID, AccountID: t.AccountID, CategoryID: t.CategoryID, Amount: t.Amount, Type: t.Type, Timestamp: t.Date, Description: func() string { v, _ := t.Notes(); return v }()})
+		notes, _ := t.Notes()
+		result = append(result, model.Transaction{
+			ID:          t.ID,
+			UserID:      t.UserID,
+			AccountID:   t.AccountID,
+			CategoryID:  t.CategoryID,
+			Amount:      t.Amount,
+			Type:        t.Type,
+			Timestamp:   t.Date,
+			Date:        t.Date.Format("2006-01-02"),
+			Description: notes,
+			Notes:       notes,
+			CreatedAt:   t.CreatedAt,
+			UpdatedAt:   t.UpdatedAt,
+		})
 	}
-	return result, nil
+	return result, total, nil
 }
 
 func (r *repoImpl) CreateTransaction(t model.Transaction) (*model.Transaction, error) {
 	var optional []db.TransactionSetParam
-	if t.Description != "" {
-		optional = append(optional, db.Transaction.Notes.Set(t.Description))
+	notesVal := t.Description
+	if notesVal == "" {
+		notesVal = t.Notes
+	}
+	if notesVal != "" {
+		optional = append(optional, db.Transaction.Notes.Set(notesVal))
 	}
 
 	tx, err := r.prisma.Prisma.Transaction.CreateOne(
@@ -54,7 +102,21 @@ func (r *repoImpl) CreateTransaction(t model.Transaction) (*model.Transaction, e
 	if err != nil {
 		return nil, err
 	}
-	return &model.Transaction{ID: tx.ID, UserID: tx.UserID, AccountID: tx.AccountID, CategoryID: tx.CategoryID, Amount: tx.Amount, Type: tx.Type, Timestamp: tx.Date, Description: func() string { v, _ := tx.Notes(); return v }()}, nil
+	notes, _ := tx.Notes()
+	return &model.Transaction{
+		ID:          tx.ID,
+		UserID:      tx.UserID,
+		AccountID:   tx.AccountID,
+		CategoryID:  tx.CategoryID,
+		Amount:      tx.Amount,
+		Type:        tx.Type,
+		Timestamp:   tx.Date,
+		Date:        tx.Date.Format("2006-01-02"),
+		Description: notes,
+		Notes:       notes,
+		CreatedAt:   tx.CreatedAt,
+		UpdatedAt:   tx.UpdatedAt,
+	}, nil
 }
 
 func (r *repoImpl) GetTransactionByID(id string) (*model.Transaction, error) {
@@ -67,7 +129,21 @@ func (r *repoImpl) GetTransactionByID(id string) (*model.Transaction, error) {
 		}
 		return nil, err
 	}
-	return &model.Transaction{ID: t.ID, UserID: t.UserID, AccountID: t.AccountID, CategoryID: t.CategoryID, Amount: t.Amount, Type: t.Type, Timestamp: t.Date, Description: func() string { v, _ := t.Notes(); return v }()}, nil
+	notes, _ := t.Notes()
+	return &model.Transaction{
+		ID:          t.ID,
+		UserID:      t.UserID,
+		AccountID:   t.AccountID,
+		CategoryID:  t.CategoryID,
+		Amount:      t.Amount,
+		Type:        t.Type,
+		Timestamp:   t.Date,
+		Date:        t.Date.Format("2006-01-02"),
+		Description: notes,
+		Notes:       notes,
+		CreatedAt:   t.CreatedAt,
+		UpdatedAt:   t.UpdatedAt,
+	}, nil
 }
 
 func (r *repoImpl) DeleteTransaction(id string) error {

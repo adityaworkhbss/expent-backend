@@ -90,6 +90,7 @@ func buildPrompt(rawText string) string {
 
 Respond ONLY with a valid JSON object in exactly this format (no markdown, no explanation):
 {
+  "category": "<classification, e.g. Food, Shopping, Travel, Salary, Entertainment, Utilities, Other>",
   "amount": <float>,
   "type": "<expense|income>",
   "description": "<merchant or narration>",
@@ -99,6 +100,7 @@ Respond ONLY with a valid JSON object in exactly this format (no markdown, no ex
 }
 
 Rules:
+- "category" should be a best guess classification (e.g. Food, Shopping, Travel, Salary, Entertainment, Utilities, Other).
 - "type" must be either "expense" (money deducted/debited) or "income" (money credited/received).
 - "amount" must be a positive number.
 - If you cannot determine a field, use an empty string or 0.

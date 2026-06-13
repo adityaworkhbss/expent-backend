@@ -11,6 +11,11 @@ type RefreshTokenRequest struct {
 }
 
 type AuthResponse struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken,omitempty"`
+	AccessToken     string `json:"accessToken"`
+	RefreshToken    string `json:"refreshToken,omitempty"`
+	OnboardingCount int    `json:"onboardingCount"`
+}
+
+type OnboardingStepRequestDto struct {
+	OnboardingCount int `json:"onboardingCount" binding:"required"`
 }

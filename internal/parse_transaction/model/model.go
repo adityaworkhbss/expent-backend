@@ -2,12 +2,13 @@ package model
 
 // ParseRequest is the input to parse a bank SMS / raw text.
 type ParseRequest struct {
-	// RawText is the raw bank SMS or transaction description to parse.
-	RawText string `json:"rawText" binding:"required"`
+	Text    string `json:"text"`
+	RawText string `json:"rawText"`
 }
 
 // ParsedTransaction is the AI-extracted transaction fields.
 type ParsedTransaction struct {
+	Category    string  `json:"category"`
 	Amount      float64 `json:"amount"`
 	Type        string  `json:"type"`        // "expense" | "income"
 	Description string  `json:"description"` // merchant / narration

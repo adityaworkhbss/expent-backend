@@ -5,6 +5,7 @@ import (
 	"expent-backend/internal/auth/repository"
 	"expent-backend/internal/auth/service"
 	"expent-backend/internal/infrastructure/prisma"
+	"expent-backend/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,4 +20,8 @@ func RegisterRoutes(r *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	authGroup.POST("/google", h.GoogleLogin)
 	authGroup.POST("/test-login", h.TestLogin)
 	authGroup.POST("/refresh", h.RefreshToken)
+
+	protected := authGroup.Group("")
+	protected.Use(middleware.Auth())
+	protected.POST("/onboarding/increment", h.IncrementOnboarding)
 }

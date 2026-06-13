@@ -23,11 +23,20 @@ func NewHandler(svc *service.Service) *Handler {
 func (h *Handler) ParseTransaction(c *gin.Context) {
 	var req model.ParseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload: rawText is required")
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
 		return
 	}
 
-	parsed, err := h.svc.ParseTransaction(c.Request.Context(), req.RawText)
+	text := req.Text
+	if text == "" {
+		text = req.RawText
+	}
+	if text == "" {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload: text or rawText is required")
+		return
+	}
+
+	parsed, err := h.svc.ParseTransaction(c.Request.Context(), text)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

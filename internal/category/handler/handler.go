@@ -2,9 +2,11 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"expent-backend/internal/category/service"
 	"expent-backend/internal/shared"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,27 +36,64 @@ func (h *Handler) ListCategories(c *gin.Context) {
 
 // CreateCategory POST /categories
 func (h *Handler) CreateCategory(c *gin.Context) {
-	var req struct {
-		Name  string `json:"name" binding:"required"`
-		Type  string `json:"type" binding:"required"`
-		Color string `json:"color"`
-		Icon  string `json:"icon"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
-		return
-	}
 	userID, ok := c.Get("userId")
 	if !ok {
 		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
 		return
 	}
-	cat, err := h.svc.CreateCategory(context.Background(), userID.(string), req.Name, req.Type, req.Color, req.Icon)
+
+	bodyBytes, err := c.GetRawData()
 	if err != nil {
-		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		shared.ErrorResponse(c, http.StatusBadRequest, "Failed to read request body")
 		return
 	}
-	shared.SuccessResponse(c, "Category created", cat)
+
+	bodyStr := strings.TrimSpace(string(bodyBytes))
+	var reqs []struct {
+		Name  string `json:"name" binding:"required"`
+		Type  string `json:"type" binding:"required"`
+		Color string `json:"color"`
+		Icon  string `json:"icon"`
+	}
+
+	if strings.HasPrefix(bodyStr, "[") {
+		if err := json.Unmarshal(bodyBytes, &reqs); err != nil {
+			shared.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON array payload: "+err.Error())
+			return
+		}
+	} else {
+		var single struct {
+			Name  string `json:"name" binding:"required"`
+			Type  string `json:"type" binding:"required"`
+			Color string `json:"color"`
+			Icon  string `json:"icon"`
+		}
+		if err := json.Unmarshal(bodyBytes, &single); err != nil {
+			shared.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON object payload: "+err.Error())
+			return
+		}
+		if single.Name == "" || single.Type == "" {
+			shared.ErrorResponse(c, http.StatusBadRequest, "name and type are required")
+			return
+		}
+		reqs = append(reqs, single)
+	}
+
+	var createdCats []interface{}
+	for _, req := range reqs {
+		if req.Name == "" || req.Type == "" {
+			shared.ErrorResponse(c, http.StatusBadRequest, "name and type are required")
+			return
+		}
+		cat, err := h.svc.CreateCategory(c.Request.Context(), userID.(string), req.Name, req.Type, req.Color, req.Icon)
+		if err != nil {
+			shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		createdCats = append(createdCats, cat)
+	}
+
+	shared.SuccessResponse(c, "Categories created", createdCats)
 }
 
 // DeleteCategory DELETE /categories/:id

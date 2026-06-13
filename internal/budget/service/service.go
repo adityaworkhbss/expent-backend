@@ -19,9 +19,22 @@ func (s *Service) ListBudgets(ctx context.Context, userID string) ([]model.Budge
 	return s.repo.ListBudgets(userID)
 }
 
-func (s *Service) CreateBudget(ctx context.Context, userID string, categoryID string, amount float64, period string) (*model.Budget, error) {
-	b := model.Budget{UserID: userID, CategoryID: categoryID, Amount: amount, Period: period}
-	return s.repo.CreateBudget(b)
+func (s *Service) CreateBudget(ctx context.Context, budget model.Budget) (*model.Budget, error) {
+	return s.repo.CreateBudget(budget)
+}
+
+func (s *Service) UpdateBudget(ctx context.Context, userID, budgetID string, budget model.Budget) (*model.Budget, error) {
+	b, err := s.repo.GetBudgetByID(budgetID)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, fmt.Errorf("budget not found")
+	}
+	if b.UserID != userID {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	return s.repo.UpdateBudget(budgetID, budget)
 }
 
 func (s *Service) DeleteBudget(ctx context.Context, userID, budgetID string) error {

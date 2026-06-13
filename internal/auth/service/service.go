@@ -21,65 +21,66 @@ func NewService(repo repository.Repository) *Service {
 }
 
 // HandleGoogleLogin verifies the Google ID token, ensures a user exists, and returns JWTs.
-func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string) (accessToken string, refreshToken string, err error) {
+// HandleGoogleLogin verifies the Google ID token, ensures a user exists, and returns JWTs and onboarding step.
+func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string) (accessToken string, refreshToken string, onboardingStep int, err error) {
 	email, name, err := google.VerifyGoogleIDToken(ctx, idToken)
 	if err != nil {
-		return "", "", fmt.Errorf("google token validation failed: %w", err)
+		return "", "", 0, fmt.Errorf("google token validation failed: %w", err)
 	}
 	// Find or create user
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to get user: %w", err)
+		return "", "", 0, fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
 		user, err = s.repo.CreateUser(email, name)
 		if err != nil {
-			return "", "", fmt.Errorf("failed to create user: %w", err)
+			return "", "", 0, fmt.Errorf("failed to create user: %w", err)
 		}
 	}
 	// Generate JWTs
 	accessToken, err = jwt.GenerateAccessToken(user.ID)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate access token: %w", err)
+		return "", "", 0, fmt.Errorf("failed to generate access token: %w", err)
 	}
 	refreshToken, err = jwt.GenerateRefreshToken(user.ID)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+		return "", "", 0, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	// Store refresh token in DB
 	if err = s.repo.StoreRefreshToken(user.ID, refreshToken); err != nil {
-		return "", "", fmt.Errorf("failed to store refresh token: %w", err)
+		return "", "", 0, fmt.Errorf("failed to store refresh token: %w", err)
 	}
-	return accessToken, refreshToken, nil
+	return accessToken, refreshToken, user.OnboardingStep, nil
 }
 
 // TestLogin bypasses Google verification for local testing.
-func (s *Service) TestLogin(ctx context.Context, email string) (accessToken string, refreshToken string, err error) {
+func (s *Service) TestLogin(ctx context.Context, email string) (accessToken string, refreshToken string, onboardingStep int, err error) {
 	// Find or create user
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to get user: %w", err)
+		return "", "", 0, fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
 		user, err = s.repo.CreateUser(email, "Test User")
 		if err != nil {
-			return "", "", fmt.Errorf("failed to create user: %w", err)
+			return "", "", 0, fmt.Errorf("failed to create user: %w", err)
 		}
 	}
 	// Generate JWTs
 	accessToken, err = jwt.GenerateAccessToken(user.ID)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate access token: %w", err)
+		return "", "", 0, fmt.Errorf("failed to generate access token: %w", err)
 	}
 	refreshToken, err = jwt.GenerateRefreshToken(user.ID)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+		return "", "", 0, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	// Store refresh token in DB
 	if err = s.repo.StoreRefreshToken(user.ID, refreshToken); err != nil {
-		return "", "", fmt.Errorf("failed to store refresh token: %w", err)
+		return "", "", 0, fmt.Errorf("failed to store refresh token: %w", err)
 	}
-	return accessToken, refreshToken, nil
+	return accessToken, refreshToken, user.OnboardingStep, nil
 }
 
 // HandleRefresh validates a refresh token and issues a new access token.
@@ -100,4 +101,9 @@ func (s *Service) HandleRefresh(ctx context.Context, refreshToken string) (acces
 		return "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 	return accessToken, nil
+}
+
+// UpdateOnboardingStep updates the onboarding step for a user.
+func (s *Service) UpdateOnboardingStep(ctx context.Context, userID string, step int) error {
+	return s.repo.UpdateOnboardingStep(userID, step)
 }

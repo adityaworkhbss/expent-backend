@@ -19,6 +19,7 @@ model User {
   transactions     Transaction[]
   budgets          Budget[]
   customizations   UserCustomization?
+  emis             Emi[]
 }
 
 model RefreshToken {
@@ -39,6 +40,7 @@ model Category {
   user    User   @relation(fields: [userId], references: [id])
   transactions Transaction[]
   budgets   Budget[]
+  emis      Emi[]
 }
 
 model Account {
@@ -48,6 +50,7 @@ model Account {
   type    String
   user    User   @relation(fields: [userId], references: [id])
   transactions Transaction[]
+  emis         Emi[]
 }
 
 model Transaction {
@@ -87,3 +90,21 @@ model UserCustomization {
   theme    String?
   user     User   @relation(fields: [userId], references: [id])
 }
+
+model Emi {
+  id          String    @id @default(uuid())
+  userId      String
+  amount      Float
+  type        String
+  categoryId  String?
+  accountId   String?
+  date        DateTime
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id])
+  category    Category? @relation(fields: [categoryId], references: [id])
+  account     Account?  @relation(fields: [accountId], references: [id])
+}
+

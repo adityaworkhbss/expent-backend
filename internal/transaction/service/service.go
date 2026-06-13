@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 	"expent-backend/internal/transaction/model"
 	"expent-backend/internal/transaction/repository"
 	"fmt"
@@ -15,8 +16,8 @@ func NewService(repo repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) ListTransactions(ctx context.Context, userID string) ([]model.Transaction, error) {
-	return s.repo.ListTransactions(userID)
+func (s *Service) ListTransactions(ctx context.Context, userID string, from, to *time.Time, page, limit *int) ([]model.Transaction, int, error) {
+	return s.repo.ListTransactions(userID, from, to, page, limit)
 }
 
 func (s *Service) CreateTransaction(ctx context.Context, tx model.Transaction) (*model.Transaction, error) {

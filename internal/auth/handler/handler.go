@@ -30,12 +30,12 @@ func (h *Handler) GoogleLogin(c *gin.Context) {
 		return
 	}
 	ctx := context.Background()
-	access, refresh, err := h.svc.HandleGoogleLogin(ctx, req.IDToken)
+	access, refresh, obs, err := h.svc.HandleGoogleLogin(ctx, req.IDToken)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Logged in", gin.H{"accessToken": access, "refreshToken": refresh})
+	shared.SuccessResponse(c, "Logged in", gin.H{"accessToken": access, "refreshToken": refresh, "onboardingCount": obs})
 }
 
 // TestLogin handles POST /auth/test-login – bypasses Google verification for local testing.
@@ -48,12 +48,12 @@ func (h *Handler) TestLogin(c *gin.Context) {
 		return
 	}
 	ctx := context.Background()
-	access, refresh, err := h.svc.TestLogin(ctx, req.Email)
+	access, refresh, obs, err := h.svc.TestLogin(ctx, req.Email)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Test logged in", gin.H{"accessToken": access, "refreshToken": refresh})
+	shared.SuccessResponse(c, "Test logged in", gin.H{"accessToken": access, "refreshToken": refresh, "onboardingCount": obs})
 }
 
 // RefreshToken handles POST /auth/refresh – validates refresh token and issues new access token.
@@ -72,4 +72,30 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 		return
 	}
 	shared.SuccessResponse(c, "Token refreshed", gin.H{"accessToken": access})
+}
+
+// IncrementOnboarding handles POST /auth/onboarding/increment - updates user onboarding step.
+func (h *Handler) IncrementOnboarding(c *gin.Context) {
+	var req struct {
+		OnboardingCount int `json:"onboardingCount" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	userId, exists := c.Get("userId")
+	if !exists {
+		shared.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	ctx := context.Background()
+	err := h.svc.UpdateOnboardingStep(ctx, userId.(string), req.OnboardingCount)
+	if err != nil {
+		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
