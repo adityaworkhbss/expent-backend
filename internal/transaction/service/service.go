@@ -24,6 +24,21 @@ func (s *Service) CreateTransaction(ctx context.Context, tx model.Transaction) (
 	return s.repo.CreateTransaction(tx)
 }
 
+func (s *Service) UpdateTransaction(ctx context.Context, userID string, tx model.Transaction) (*model.Transaction, error) {
+	// verify ownership
+	t, err := s.repo.GetTransactionByID(tx.ID)
+	if err != nil {
+		return nil, err
+	}
+	if t == nil {
+		return nil, fmt.Errorf("transaction not found")
+	}
+	if t.UserID != userID {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	return s.repo.UpdateTransaction(tx.ID, tx)
+}
+
 func (s *Service) DeleteTransaction(ctx context.Context, userID, txID string) error {
 	// verify ownership
 	t, err := s.repo.GetTransactionByID(txID)

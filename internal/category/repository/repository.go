@@ -11,6 +11,7 @@ type Repository interface {
 	ListCategories(userID string) ([]model.Category, error)
 	CreateCategory(cat model.Category) (*model.Category, error)
 	GetCategoryByID(id string) (*model.Category, error)
+	UpdateCategory(id string, cat model.Category) (*model.Category, error)
 	DeleteCategory(id string) error
 }
 
@@ -65,6 +66,28 @@ func (r *repoImpl) GetCategoryByID(id string) (*model.Category, error) {
 		if db.IsErrNotFound(err) {
 			return nil, nil
 		}
+		return nil, err
+	}
+	return &model.Category{ID: c.ID, UserID: c.UserID, Name: c.Name, Type: c.Type, Color: func() string { v, _ := c.Color(); return v }(), Icon: func() string { v, _ := c.Icon(); return v }()}, nil
+}
+
+func (r *repoImpl) UpdateCategory(id string, cat model.Category) (*model.Category, error) {
+	var updateParams []db.CategorySetParam
+	updateParams = append(updateParams, db.Category.Name.Set(cat.Name))
+	updateParams = append(updateParams, db.Category.Type.Set(cat.Type))
+	if cat.Color != "" {
+		updateParams = append(updateParams, db.Category.Color.Set(cat.Color))
+	}
+	if cat.Icon != "" {
+		updateParams = append(updateParams, db.Category.Icon.Set(cat.Icon))
+	}
+
+	c, err := r.prisma.Prisma.Category.FindUnique(
+		db.Category.ID.Equals(id),
+	).Update(
+		updateParams...,
+	).Exec(context.Background())
+	if err != nil {
 		return nil, err
 	}
 	return &model.Category{ID: c.ID, UserID: c.UserID, Name: c.Name, Type: c.Type, Color: func() string { v, _ := c.Color(); return v }(), Icon: func() string { v, _ := c.Icon(); return v }()}, nil

@@ -23,19 +23,32 @@ func NewHandler(svc *service.Service) *Handler {
 // GoogleLogin handles POST /auth/google – verifies Google ID token and returns JWTs.
 func (h *Handler) GoogleLogin(c *gin.Context) {
 	var req struct {
-		IDToken string `json:"idToken" binding:"required"`
+		IDToken string `json:"idToken"`
+		Name    string `json:"name"`
+		Email   string `json:"email"`
+		ID      string `json:"id"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid request payload")
 		return
 	}
+	if req.IDToken == "" {
+		shared.ErrorResponse(c, http.StatusBadRequest, "idToken is required")
+		return
+	}
 	ctx := context.Background()
-	access, refresh, obs, err := h.svc.HandleGoogleLogin(ctx, req.IDToken)
+	access, refresh, obs, email, name, err := h.svc.HandleGoogleLogin(ctx, req.IDToken, req.ID)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Logged in", gin.H{"accessToken": access, "refreshToken": refresh, "onboardingCount": obs})
+	shared.SuccessResponse(c, "Logged in", gin.H{
+		"accessToken":     access,
+		"refreshToken":    refresh,
+		"onboardingCount": obs,
+		"email":           email,
+		"name":            name,
+	})
 }
 
 // TestLogin handles POST /auth/test-login – bypasses Google verification for local testing.
@@ -48,12 +61,18 @@ func (h *Handler) TestLogin(c *gin.Context) {
 		return
 	}
 	ctx := context.Background()
-	access, refresh, obs, err := h.svc.TestLogin(ctx, req.Email)
+	access, refresh, obs, email, name, err := h.svc.TestLogin(ctx, req.Email)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	shared.SuccessResponse(c, "Test logged in", gin.H{"accessToken": access, "refreshToken": refresh, "onboardingCount": obs})
+	shared.SuccessResponse(c, "Test logged in", gin.H{
+		"accessToken":     access,
+		"refreshToken":    refresh,
+		"onboardingCount": obs,
+		"email":           email,
+		"name":            name,
+	})
 }
 
 // RefreshToken handles POST /auth/refresh – validates refresh token and issues new access token.

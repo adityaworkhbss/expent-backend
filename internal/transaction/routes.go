@@ -17,5 +17,6 @@ func RegisterRoutes(rg *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	txGroup := rg.Group("/transactions")
 	txGroup.GET("", h.ListTransactions)
 	txGroup.POST("", h.CreateTransaction)
+	txGroup.PUT("/:id", h.UpdateTransaction)
 	txGroup.DELETE("/:id", h.DeleteTransaction)
 }

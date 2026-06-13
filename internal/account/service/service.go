@@ -24,6 +24,21 @@ func (s *Service) CreateAccount(ctx context.Context, userID, name, typ string) (
 	return s.repo.CreateAccount(acc)
 }
 
+func (s *Service) UpdateAccount(ctx context.Context, userID, accountID, name, typ string) (*model.Account, error) {
+	a, err := s.repo.GetAccountByID(accountID)
+	if err != nil {
+		return nil, err
+	}
+	if a == nil {
+		return nil, fmt.Errorf("account not found")
+	}
+	if a.UserID != userID {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	updated := model.Account{UserID: userID, Name: name, Type: typ}
+	return s.repo.UpdateAccount(accountID, updated)
+}
+
 func (s *Service) DeleteAccount(ctx context.Context, userID, accountID string) error {
 	// ownership check
 	a, err := s.repo.GetAccountByID(accountID)

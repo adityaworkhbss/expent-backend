@@ -12,7 +12,7 @@ import (
 
 type Repository interface {
 	GetUserByEmail(email string) (*model.User, error)
-	CreateUser(email, name string) (*model.User, error)
+	CreateUser(email, name, id string) (*model.User, error)
 	StoreRefreshToken(userID, token string) error
 	GetRefreshToken(token string) (*model.RefreshToken, error)
 	UpdateOnboardingStep(userID string, step int) error
@@ -44,10 +44,17 @@ func (r *repoImpl) GetUserByEmail(email string) (*model.User, error) {
 	return &model.User{ID: user.ID, Email: user.Email, Name: func() string { v, _ := user.Name(); return v }(), OnboardingStep: obs}, nil
 }
 
-func (r *repoImpl) CreateUser(email, name string) (*model.User, error) {
+func (r *repoImpl) CreateUser(email, name, id string) (*model.User, error) {
+	var params []db.UserSetParam
+	if name != "" {
+		params = append(params, db.User.Name.Set(name))
+	}
+	if id != "" {
+		params = append(params, db.User.ID.Set(id))
+	}
 	usr, err := r.prisma.Prisma.User.CreateOne(
 		db.User.Email.Set(email),
-		db.User.Name.Set(name),
+		params...,
 	).Exec(context.Background())
 	if err != nil {
 		zap.S().Error("failed to create user", zap.Error(err))

@@ -122,6 +122,47 @@ func (h *Handler) CreateTransaction(c *gin.Context) {
 	shared.SuccessResponse(c, "Transaction created", tx)
 }
 
+// UpdateTransaction PUT /transactions/:id
+func (h *Handler) UpdateTransaction(c *gin.Context) {
+	txID := c.Param("id")
+	var req model.Transaction
+	if err := c.ShouldBindJSON(&req); err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
+		return
+	}
+	userID, ok := c.Get("userId")
+	if !ok {
+		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+	req.ID = txID
+	req.UserID = userID.(string)
+
+	// Map date to Timestamp
+	if req.Date != "" {
+		if t, err := time.Parse("2006-01-02", req.Date); err == nil {
+			req.Timestamp = t
+		} else if t, err := time.Parse(time.RFC3339, req.Date); err == nil {
+			req.Timestamp = t
+		} else {
+			req.Timestamp = time.Now()
+		}
+	} else {
+		req.Timestamp = time.Now()
+	}
+
+	if req.Notes != "" {
+		req.Description = req.Notes
+	}
+
+	tx, err := h.svc.UpdateTransaction(c.Request.Context(), userID.(string), req)
+	if err != nil {
+		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	shared.SuccessResponse(c, "Transaction updated", tx)
+}
+
 // DeleteTransaction DELETE /transactions/:id
 func (h *Handler) DeleteTransaction(c *gin.Context) {
 	txID := c.Param("id")

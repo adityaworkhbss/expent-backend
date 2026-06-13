@@ -19,5 +19,6 @@ func RegisterRoutes(rg *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	catGroup := rg.Group("/categories")
 	catGroup.GET("", h.ListCategories)        // GET /categories
 	catGroup.POST("", h.CreateCategory)       // POST /categories
+	catGroup.PUT("/:id", h.UpdateCategory)    // PUT /categories/:id
 	catGroup.DELETE("/:id", h.DeleteCategory) // DELETE /categories/:id
 }

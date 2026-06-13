@@ -17,5 +17,6 @@ func RegisterRoutes(rg *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	accGroup := rg.Group("/accounts")
 	accGroup.GET("", h.ListAccounts)
 	accGroup.POST("", h.CreateAccount)
+	accGroup.PUT("/:id", h.UpdateAccount)
 	accGroup.DELETE("/:id", h.DeleteAccount)
 }

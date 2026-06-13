@@ -92,6 +92,32 @@ func (h *Handler) CreateAccount(c *gin.Context) {
 	shared.SuccessResponse(c, "Accounts created", createdAccs)
 }
 
+// UpdateAccount PUT /accounts/:id
+func (h *Handler) UpdateAccount(c *gin.Context) {
+	accID := c.Param("id")
+	userID, ok := c.Get("userId")
+	if !ok {
+		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
+	var req struct {
+		Name string `json:"name" binding:"required"`
+		Type string `json:"type" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
+		return
+	}
+
+	acc, err := h.svc.UpdateAccount(c.Request.Context(), userID.(string), accID, req.Name, req.Type)
+	if err != nil {
+		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	shared.SuccessResponse(c, "Account updated", acc)
+}
+
 // DeleteAccount DELETE /accounts/:id
 func (h *Handler) DeleteAccount(c *gin.Context) {
 	accID := c.Param("id")

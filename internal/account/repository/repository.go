@@ -11,6 +11,7 @@ type Repository interface {
 	ListAccounts(userID string) ([]model.Account, error)
 	CreateAccount(acc model.Account) (*model.Account, error)
 	GetAccountByID(id string) (*model.Account, error)
+	UpdateAccount(id string, acc model.Account) (*model.Account, error)
 	DeleteAccount(id string) error
 }
 
@@ -56,6 +57,19 @@ func (r *repoImpl) GetAccountByID(id string) (*model.Account, error) {
 		if db.IsErrNotFound(err) {
 			return nil, nil
 		}
+		return nil, err
+	}
+	return &model.Account{ID: a.ID, UserID: a.UserID, Name: a.Name, Type: a.Type}, nil
+}
+
+func (r *repoImpl) UpdateAccount(id string, acc model.Account) (*model.Account, error) {
+	a, err := r.prisma.Prisma.Account.FindUnique(
+		db.Account.ID.Equals(id),
+	).Update(
+		db.Account.Name.Set(acc.Name),
+		db.Account.Type.Set(acc.Type),
+	).Exec(context.Background())
+	if err != nil {
 		return nil, err
 	}
 	return &model.Account{ID: a.ID, UserID: a.UserID, Name: a.Name, Type: a.Type}, nil

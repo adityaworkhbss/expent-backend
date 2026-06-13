@@ -12,6 +12,7 @@ type Repository interface {
 	ListTransactions(userID string, from, to *time.Time, page, limit *int) ([]model.Transaction, int, error)
 	CreateTransaction(t model.Transaction) (*model.Transaction, error)
 	GetTransactionByID(id string) (*model.Transaction, error)
+	UpdateTransaction(id string, t model.Transaction) (*model.Transaction, error)
 	DeleteTransaction(id string) error
 }
 
@@ -143,6 +144,47 @@ func (r *repoImpl) GetTransactionByID(id string) (*model.Transaction, error) {
 		Notes:       notes,
 		CreatedAt:   t.CreatedAt,
 		UpdatedAt:   t.UpdatedAt,
+	}, nil
+}
+
+func (r *repoImpl) UpdateTransaction(id string, t model.Transaction) (*model.Transaction, error) {
+	var updateParams []db.TransactionSetParam
+	updateParams = append(updateParams, db.Transaction.Amount.Set(t.Amount))
+	updateParams = append(updateParams, db.Transaction.Type.Set(t.Type))
+	updateParams = append(updateParams, db.Transaction.Date.Set(t.Timestamp))
+	updateParams = append(updateParams, db.Transaction.Category.Link(db.Category.ID.Equals(t.CategoryID)))
+	updateParams = append(updateParams, db.Transaction.Account.Link(db.Account.ID.Equals(t.AccountID)))
+
+	notesVal := t.Description
+	if notesVal == "" {
+		notesVal = t.Notes
+	}
+	if notesVal != "" {
+		updateParams = append(updateParams, db.Transaction.Notes.Set(notesVal))
+	}
+
+	tx, err := r.prisma.Prisma.Transaction.FindUnique(
+		db.Transaction.ID.Equals(id),
+	).Update(
+		updateParams...,
+	).Exec(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	notes, _ := tx.Notes()
+	return &model.Transaction{
+		ID:          tx.ID,
+		UserID:      tx.UserID,
+		AccountID:   tx.AccountID,
+		CategoryID:  tx.CategoryID,
+		Amount:      tx.Amount,
+		Type:        tx.Type,
+		Timestamp:   tx.Date,
+		Date:        tx.Date.Format("2006-01-02"),
+		Description: notes,
+		Notes:       notes,
+		CreatedAt:   tx.CreatedAt,
+		UpdatedAt:   tx.UpdatedAt,
 	}, nil
 }
 

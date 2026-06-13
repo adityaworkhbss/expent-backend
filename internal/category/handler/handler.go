@@ -96,6 +96,34 @@ func (h *Handler) CreateCategory(c *gin.Context) {
 	shared.SuccessResponse(c, "Categories created", createdCats)
 }
 
+// UpdateCategory PUT /categories/:id
+func (h *Handler) UpdateCategory(c *gin.Context) {
+	catID := c.Param("id")
+	userID, ok := c.Get("userId")
+	if !ok {
+		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
+	var req struct {
+		Name  string `json:"name" binding:"required"`
+		Type  string `json:"type" binding:"required"`
+		Color string `json:"color"`
+		Icon  string `json:"icon"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
+		return
+	}
+
+	cat, err := h.svc.UpdateCategory(c.Request.Context(), userID.(string), catID, req.Name, req.Type, req.Color, req.Icon)
+	if err != nil {
+		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	shared.SuccessResponse(c, "Category updated", cat)
+}
+
 // DeleteCategory DELETE /categories/:id
 func (h *Handler) DeleteCategory(c *gin.Context) {
 	catID := c.Param("id")

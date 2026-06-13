@@ -28,6 +28,22 @@ func (s *Service) CreateCategory(ctx context.Context, userID, name, typ, color, 
 	return s.repo.CreateCategory(cat)
 }
 
+// UpdateCategory updates a category belonging to the user.
+func (s *Service) UpdateCategory(ctx context.Context, userID, categoryID, name, typ, color, icon string) (*model.Category, error) {
+	cat, err := s.repo.GetCategoryByID(categoryID)
+	if err != nil {
+		return nil, err
+	}
+	if cat == nil {
+		return nil, fmt.Errorf("category not found")
+	}
+	if cat.UserID != userID {
+		return nil, fmt.Errorf("unauthorized")
+	}
+	updated := model.Category{UserID: userID, Name: name, Type: typ, Color: color, Icon: icon}
+	return s.repo.UpdateCategory(categoryID, updated)
+}
+
 // DeleteCategory removes a category belonging to the user.
 func (s *Service) DeleteCategory(ctx context.Context, userID, categoryID string) error {
 	// Verify ownership (optional)
