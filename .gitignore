@@ -33,3 +33,4 @@ Thumbs.db
 
 # Air (hot-reload) tmp dir
 tmp/
+/node_modules/
