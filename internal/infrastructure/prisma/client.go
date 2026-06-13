@@ -18,8 +18,8 @@ func NewClient(databaseURL string) (*PrismaClient, error) {
 	if err := os.Setenv("DATABASE_URL", databaseURL); err != nil {
 		log.Printf("Failed to set DATABASE_URL env: %v", err)
 	}
-	// Initialize the generated Prisma client.
-	client := db.NewClient()
+	// Initialize the generated Prisma client with the datasource URL option.
+	client := db.NewClient(db.WithDatasourceURL(databaseURL))
 	if err := client.Prisma.Connect(); err != nil {
 		return nil, err
 	}
