@@ -17,5 +17,6 @@ func RegisterRoutes(r *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 
 	authGroup := r.Group("/auth")
 	authGroup.POST("/google", h.GoogleLogin)
+	authGroup.POST("/test-login", h.TestLogin)
 	authGroup.POST("/refresh", h.RefreshToken)
 }

@@ -12,6 +12,12 @@ import (
     "expent-backend/internal/infrastructure/prisma"
     "expent-backend/internal/middleware"
     "expent-backend/internal/auth"
+    "expent-backend/internal/account"
+    "expent-backend/internal/budget"
+    "expent-backend/internal/category"
+    "expent-backend/internal/dashboard"
+    "expent-backend/internal/transaction"
+    parsetransaction "expent-backend/internal/parse_transaction"
 )
 
 func main() {
@@ -41,13 +47,22 @@ func main() {
     r := gin.New()
     // Global middleware
     r.Use(middleware.Logger())
-    r.Use(middleware.Auth()) // JWT auth middleware
     r.Use(middleware.Recovery())
 
-    // Register routes
+    // Public routes
     api := r.Group("/" + configs.AppConfig.API_PREFIX)
     auth.RegisterRoutes(api, prismaClient)
-    // TODO: Register other module routes here
+
+    // Protected routes (requires JWT)
+    protected := api.Group("")
+    protected.Use(middleware.Auth())
+    
+    account.RegisterRoutes(protected, prismaClient)
+    budget.RegisterRoutes(protected, prismaClient)
+    category.RegisterRoutes(protected, prismaClient)
+    transaction.RegisterRoutes(protected, prismaClient)
+    parsetransaction.RegisterRoutes(protected)
+    dashboard.RegisterRoutes(protected)
 
     // Start server
     port := configs.AppConfig.PORT

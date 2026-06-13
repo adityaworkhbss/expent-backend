@@ -6,6 +6,7 @@ import (
 	"expent-backend/internal/auth/repository"
 	"expent-backend/internal/infrastructure/google"
 	"expent-backend/internal/infrastructure/jwt"
+
 	"fmt"
 )
 
@@ -32,6 +33,35 @@ func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string) (access
 	}
 	if user == nil {
 		user, err = s.repo.CreateUser(email, name)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to create user: %w", err)
+		}
+	}
+	// Generate JWTs
+	accessToken, err = jwt.GenerateAccessToken(user.ID)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate access token: %w", err)
+	}
+	refreshToken, err = jwt.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+	// Store refresh token in DB
+	if err = s.repo.StoreRefreshToken(user.ID, refreshToken); err != nil {
+		return "", "", fmt.Errorf("failed to store refresh token: %w", err)
+	}
+	return accessToken, refreshToken, nil
+}
+
+// TestLogin bypasses Google verification for local testing.
+func (s *Service) TestLogin(ctx context.Context, email string) (accessToken string, refreshToken string, err error) {
+	// Find or create user
+	user, err := s.repo.GetUserByEmail(email)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		user, err = s.repo.CreateUser(email, "Test User")
 		if err != nil {
 			return "", "", fmt.Errorf("failed to create user: %w", err)
 		}
