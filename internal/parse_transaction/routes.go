@@ -9,7 +9,7 @@ import (
 )
 
 func RegisterRoutes(rg *gin.RouterGroup) {
-	svc := service.NewService(configs.AppConfig.GEMINI_API_KEY)
+	svc := service.NewService(configs.AppConfig.GEMINI_API_KEY, configs.AppConfig.GEMINI_MODEL)
 	h := handler.NewHandler(svc)
 
 	rg.POST("/parse-transaction", h.ParseTransaction)

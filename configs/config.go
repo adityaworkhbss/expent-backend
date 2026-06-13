@@ -14,6 +14,7 @@ type Config struct {
     DEFAULT_SALARY_DAY       string
     DEFAULT_TIMEZONE         string
     GEMINI_API_KEY           string
+    GEMINI_MODEL             string
     GOOGLE_CLIENT_ID         string
     JWT_EXPIRES_IN           string
     JWT_REFRESH_EXPIRES_IN   string
@@ -42,6 +43,7 @@ func LoadConfig() {
         DEFAULT_SALARY_DAY:       getEnv("DEFAULT_SALARY_DAY", "10"),
         DEFAULT_TIMEZONE:         getEnv("DEFAULT_TIMEZONE", "Asia/Kolkata"),
         GEMINI_API_KEY:           getEnv("GEMINI_API_KEY", ""),
+        GEMINI_MODEL:             getEnv("GEMINI_MODEL", "gemini-3.5-flash"),
         GOOGLE_CLIENT_ID:         getEnv("GOOGLE_CLIENT_ID", ""),
         JWT_EXPIRES_IN:           getEnv("JWT_EXPIRES_IN", "15m"),
         JWT_REFRESH_EXPIRES_IN:   getEnv("JWT_REFRESH_EXPIRES_IN", "7d"),

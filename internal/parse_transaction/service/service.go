@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
+	"time"
 
 	"expent-backend/internal/parse_transaction/model"
 
@@ -12,11 +14,15 @@ import (
 )
 
 type Service struct {
-	geminiKey string
+	geminiKey   string
+	geminiModel string
 }
 
-func NewService(geminiKey string) *Service {
-	return &Service{geminiKey: geminiKey}
+func NewService(geminiKey, geminiModel string) *Service {
+	return &Service{
+		geminiKey:   geminiKey,
+		geminiModel: geminiModel,
+	}
 }
 
 // ParseTransaction calls Gemini to extract structured transaction data from a raw SMS or text.
@@ -31,14 +37,38 @@ func (s *Service) ParseTransaction(ctx context.Context, rawText string) (*model.
 
 	prompt := buildPrompt(rawText)
 
-	result, err := client.Models.GenerateContent(
-		ctx,
-		"gemini-2.0-flash",
-		genai.Text(prompt),
-		nil,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("gemini request failed: %w", err)
+	// Fallback chain of models in case of rate limits, quota issues, or model deprecation.
+	modelsToTry := []string{s.geminiModel}
+	for _, fallback := range []string{"gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"} {
+		if fallback != s.geminiModel {
+			modelsToTry = append(modelsToTry, fallback)
+		}
+	}
+
+	var result *genai.GenerateContentResponse
+	var genErr error
+
+	for i, modelName := range modelsToTry {
+		result, genErr = client.Models.GenerateContent(
+			ctx,
+			modelName,
+			genai.Text(prompt),
+			nil,
+		)
+		if genErr == nil {
+			break
+		}
+
+		log.Printf("Gemini call failed with model %s (attempt %d/%d): %v", modelName, i+1, len(modelsToTry), genErr)
+
+		// If it's not the last model, wait a moment and try the next fallback
+		if i < len(modelsToTry)-1 {
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	if genErr != nil {
+		return nil, fmt.Errorf("gemini request failed (tried %d models): %w", len(modelsToTry), genErr)
 	}
 
 	rawJSON := extractJSON(result.Text())
