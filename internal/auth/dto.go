@@ -1,7 +1,5 @@
 package auth
 
-// DTO definitions for Auth module.
-
 type GoogleLoginRequest struct {
 	IDToken string `json:"idToken" binding:"required"`
 }

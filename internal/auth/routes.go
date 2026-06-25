@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterRoutes sets up auth related endpoints.
 func RegisterRoutes(r *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	repo := repository.NewRepository(prismaClient)
 	svc := service.NewService(repo)

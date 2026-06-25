@@ -20,7 +20,6 @@ func NewService(repo repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-// HandleGoogleLogin verifies the Google ID token (using Google Client), ensures a user exists, and returns JWTs and onboarding step.
 func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string, id string) (accessToken string, refreshToken string, onboardingStep int, email string, name string, err error) {
 	email, name, err = google.VerifyGoogleIDToken(ctx, idToken)
 	if err != nil {
@@ -30,7 +29,6 @@ func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string, id stri
 		name = "User"
 	}
 
-	// Find or create user
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
 		return "", "", 0, "", "", fmt.Errorf("failed to get user: %w", err)
@@ -41,16 +39,17 @@ func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string, id stri
 			return "", "", 0, "", "", fmt.Errorf("failed to create user: %w", err)
 		}
 	}
-	// Generate JWTs
+
 	accessToken, err = jwt.GenerateAccessToken(user.ID)
 	if err != nil {
 		return "", "", 0, "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 	refreshToken, err = jwt.GenerateRefreshToken(user.ID)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+		return "", "", 0, "", "",
+			fmt.Errorf("failed to generate refresh token: %w", err)
 	}
-	// Store refresh token in DB
+
 	if err = s.repo.StoreRefreshToken(user.ID, refreshToken); err != nil {
 		return "", "", 0, "", "", fmt.Errorf("failed to store refresh token: %w", err)
 	}

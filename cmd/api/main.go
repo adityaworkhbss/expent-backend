@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expent-backend/prisma/db"
 	"log"
 	"net/http"
 
@@ -28,7 +29,6 @@ func main() {
 	}
 	configs.LoadConfig()
 
-	// Initialize logger (zap)
 	logger, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
@@ -41,16 +41,19 @@ func main() {
 	}(logger)
 	zap.ReplaceGlobals(logger)
 
-	// Prisma client
 	prismaClient, err := prisma.NewClient(configs.AppConfig.DATABASE_URL)
 	if err != nil {
 		logger.Fatal("Failed to initialize Prisma client", zap.Error(err))
 	}
-	defer prismaClient.Prisma.Disconnect()
+	defer func(Prisma *db.PrismaClient) {
+		err := Prisma.Disconnect()
+		if err != nil {
+			logger.Fatal("Failed to disconnect Prisma", zap.Error(err))
+		}
+	}(prismaClient.Prisma)
 
-	// Create Gin router
 	r := gin.New()
-	// Global middleware
+
 	r.Use(middleware.CORS())
 	r.Use(middleware.Logger())
 	r.Use(middleware.Recovery())

@@ -10,10 +10,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Auth middleware validates JWT and sets userId in context
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Extract Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "message": "Missing Authorization header"})
@@ -25,9 +23,9 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 		tokenString := parts[1]
-		// Parse token
+
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
-			// Verify signing method
+			
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, jwt.ErrTokenUnverifiable
 			}

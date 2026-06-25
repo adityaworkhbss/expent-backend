@@ -13,7 +13,6 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// GenerateAccessToken creates a signed JWT access token for a given user ID.
 func GenerateAccessToken(userID string) (string, error) {
 	expiresIn, err := time.ParseDuration(configs.AppConfig.JWT_EXPIRES_IN)
 	if err != nil {
@@ -35,7 +34,6 @@ func GenerateAccessToken(userID string) (string, error) {
 	return signed, nil
 }
 
-// GenerateRefreshToken creates a signed JWT refresh token.
 func GenerateRefreshToken(userID string) (string, error) {
 	expiresIn, err := time.ParseDuration(configs.AppConfig.JWT_REFRESH_EXPIRES_IN)
 	if err != nil {
@@ -57,7 +55,6 @@ func GenerateRefreshToken(userID string) (string, error) {
 	return signed, nil
 }
 
-// ValidateAccessToken parses and validates an access token string.
 func ValidateAccessToken(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(configs.AppConfig.JWT_SECRET), nil
@@ -71,7 +68,6 @@ func ValidateAccessToken(tokenStr string) (*Claims, error) {
 	return nil, jwt.ErrTokenInvalidClaims
 }
 
-// ValidateRefreshToken parses and validates a refresh token string.
 func ValidateRefreshToken(tokenStr string) (*Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(configs.AppConfig.JWT_REFRESH_SECRET), nil

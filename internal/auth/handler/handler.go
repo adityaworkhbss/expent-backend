@@ -10,17 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Handler holds dependencies for auth endpoints.
 type Handler struct {
 	svc *service.Service
 }
 
-// NewHandler creates a new auth handler.
 func NewHandler(svc *service.Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// GoogleLogin handles POST /auth/google – verifies Google ID token and returns JWTs.
 func (h *Handler) GoogleLogin(c *gin.Context) {
 	var req struct {
 		IDToken string `json:"idToken"`
@@ -75,7 +72,6 @@ func (h *Handler) TestLogin(c *gin.Context) {
 	})
 }
 
-// RefreshToken handles POST /auth/refresh – validates refresh token and issues new access token.
 func (h *Handler) RefreshToken(c *gin.Context) {
 	var req struct {
 		RefreshToken string `json:"refreshToken" binding:"required"`
@@ -93,7 +89,6 @@ func (h *Handler) RefreshToken(c *gin.Context) {
 	shared.SuccessResponse(c, "Token refreshed", gin.H{"accessToken": access})
 }
 
-// IncrementOnboarding handles POST /auth/onboarding/increment - updates user onboarding step.
 func (h *Handler) IncrementOnboarding(c *gin.Context) {
 	var req struct {
 		OnboardingCount int `json:"onboardingCount" binding:"required"`
