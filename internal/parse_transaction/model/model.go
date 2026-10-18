@@ -22,37 +22,26 @@ type CatalogItem struct {
 
 // GeminiParsed is the JSON object the model is asked to return.
 type GeminiParsed struct {
-	Type          string             `json:"type"`
-	Amount        shared.FlexFloat64 `json:"amount"`
-	CategoryID    string             `json:"category_id"`
-	CategoryName  string             `json:"category_name"`
-	Category      string             `json:"category"`
-	AccountID     *string            `json:"account_id"`
-	AccountName   string             `json:"account_name"`
-	PaymentMethod string             `json:"payment_method"`
-	Description   string             `json:"description"`
-	Merchant      string             `json:"merchant"`
-	Note          string             `json:"note"`
-	Date          string             `json:"date"`
-	Currency      string             `json:"currency"`
-	Confidence    shared.FlexFloat64 `json:"confidence"`
+	Type         string             `json:"type"`
+	Amount       shared.FlexFloat64 `json:"amount"`
+	CategoryID   string             `json:"category_id"`
+	CategoryName string             `json:"category_name"`
+	Category     string             `json:"category"` // tolerated if the model uses this key instead
+	AccountID    *string            `json:"account_id"`
+	AccountName  string             `json:"account_name"`
+	Date         string             `json:"date"`
 }
 
 // ParsedTransaction is returned in data for the app to review then save.
+// It carries only what a transaction stores: type, amount, date, category and account.
 type ParsedTransaction struct {
-	Type          string  `json:"type"`
-	Amount        float64 `json:"amount"`
-	CategoryID    string  `json:"category_id"`
-	CategoryName  string  `json:"category_name"`
-	AccountID     *string `json:"account_id"`
-	AccountName   string  `json:"account_name"`
-	PaymentMethod string  `json:"payment_method"`
-	Description   string  `json:"description"`
-	Merchant      string  `json:"merchant"`
-	Note          string  `json:"note"`
-	Date          string  `json:"date"`
-	Currency      string  `json:"currency"`
-	Confidence    float64 `json:"confidence"`
+	Type         string  `json:"type"`
+	Amount       float64 `json:"amount"`
+	CategoryID   string  `json:"category_id"`
+	CategoryName string  `json:"category_name"`
+	AccountID    *string `json:"account_id"`
+	AccountName  string  `json:"account_name"`
+	Date         string  `json:"date"`
 }
 
 // ParseResult is the full parse-transaction payload.

@@ -59,7 +59,6 @@ model Transaction {
   accountId  String
   amount     Float
   type       String
-  notes      String?
   date       DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

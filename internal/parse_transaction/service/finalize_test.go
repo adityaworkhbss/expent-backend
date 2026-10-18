@@ -17,16 +17,11 @@ func TestFinalizeParseMapsRealIDs(t *testing.T) {
 	}
 
 	got := finalizeParse(model.GeminiParsed{
-		Type:          "EXPENSE",
-		Amount:        shared.FlexFloat64(250),
-		CategoryName:  "Transport",
-		AccountName:   "HDFC",
-		PaymentMethod: "UPI",
-		Description:   "Uber",
-		Merchant:      "Uber",
-		Date:          "today",
-		Currency:      "INR",
-		Confidence:    shared.FlexFloat64(0.95),
+		Type:         "EXPENSE",
+		Amount:       shared.FlexFloat64(250),
+		CategoryName: "Transport",
+		AccountName:  "HDFC",
+		Date:         "today",
 	}, cats, accs, "2026-10-18")
 
 	if got.RequiresUserInput {
@@ -51,7 +46,7 @@ func TestFinalizeParseMapsRealIDs(t *testing.T) {
 
 func TestFinalizeParseMissingAmountAndType(t *testing.T) {
 	got := finalizeParse(model.GeminiParsed{
-		Description: "something happened",
+		CategoryName: "something happened",
 	}, nil, nil, "2026-10-18")
 
 	if !got.RequiresUserInput {

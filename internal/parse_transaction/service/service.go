@@ -149,13 +149,7 @@ Respond ONLY with a valid JSON object in exactly this format (no markdown, no ex
   "category_name": "<name from the category list>",
   "account_id": "<id from the account list, or null>",
   "account_name": "<name from the account list, or empty string>",
-  "payment_method": "<UPI, CARD, CASH, NETBANKING, or empty string>",
-  "description": "<short description>",
-  "merchant": "<merchant if known>",
-  "note": "<same as description unless a longer note is present>",
-  "date": "<yyyy-MM-dd, never empty, never in the future>",
-  "currency": "INR",
-  "confidence": <0.0 to 1.0>
+  "date": "<yyyy-MM-dd, never empty, never in the future>"
 }
 
 Rules:

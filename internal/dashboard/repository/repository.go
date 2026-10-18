@@ -90,12 +90,10 @@ func (r *repoImpl) GetTransactionsByCategoryAndDateRange(userID, categoryID stri
 func MapRecentTransactions(ts []db.TransactionModel) []model.RecentTransaction {
 	var result []model.RecentTransaction
 	for _, t := range ts {
-		notes, _ := t.Notes()
 		result = append(result, model.RecentTransaction{
 			ID:         t.ID,
 			Amount:     t.Amount,
 			Type:       t.Type,
-			Notes:      notes,
 			Date:       t.Date.Format("2006-01-02"),
 			CategoryID: t.CategoryID,
 			AccountID:  t.AccountID,

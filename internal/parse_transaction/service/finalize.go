@@ -43,28 +43,12 @@ func finalizeParse(raw model.GeminiParsed, categories, accounts []model.CatalogI
 		}
 	}
 
-	date := normalizeDate(raw.Date, todayDate)
-	currency := strings.ToUpper(strings.TrimSpace(raw.Currency))
-	if currency == "" {
-		currency = "INR"
-	}
-
-	merchant := firstNonEmpty(raw.Merchant, guessMerchant(raw.Description, raw.Note))
-	description := firstNonEmpty(raw.Description, merchant, catName)
-	note := firstNonEmpty(raw.Note, description)
-
 	out := model.ParsedTransaction{
-		Type:          txnType,
-		Amount:        raw.Amount.Float64(),
-		AccountID:     accID,
-		AccountName:   accName,
-		PaymentMethod: strings.TrimSpace(raw.PaymentMethod),
-		Description:   description,
-		Merchant:      merchant,
-		Note:          note,
-		Date:          date,
-		Currency:      currency,
-		Confidence:    raw.Confidence.Float64(),
+		Type:        txnType,
+		Amount:      raw.Amount.Float64(),
+		AccountID:   accID,
+		AccountName: accName,
+		Date:        normalizeDate(raw.Date, todayDate),
 	}
 	if cat != nil {
 		out.CategoryID = cat.ID
@@ -269,8 +253,4 @@ func deref(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-func guessMerchant(desc, note string) string {
-	return firstNonEmpty(desc, note)
 }

@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"time"
-	"expent-backend/internal/transaction/model"
 	"expent-backend/internal/infrastructure/prisma"
+	"expent-backend/internal/transaction/model"
 	"expent-backend/prisma/db"
+	"time"
 )
 
 type Repository interface {
@@ -22,6 +22,21 @@ type repoImpl struct {
 
 func NewRepository(prismaClient *prisma.PrismaClient) Repository {
 	return &repoImpl{prisma: prismaClient}
+}
+
+func toModel(t *db.TransactionModel) model.Transaction {
+	return model.Transaction{
+		ID:         t.ID,
+		UserID:     t.UserID,
+		AccountID:  t.AccountID,
+		CategoryID: t.CategoryID,
+		Amount:     t.Amount,
+		Type:       t.Type,
+		Date:       t.Date.UTC().Format(time.RFC3339),
+		Timestamp:  t.Date,
+		CreatedAt:  t.CreatedAt,
+		UpdatedAt:  t.UpdatedAt,
+	}
 }
 
 func (r *repoImpl) ListTransactions(userID string, from, to *time.Time, page, limit *int) ([]model.Transaction, int, error) {
@@ -60,37 +75,14 @@ func (r *repoImpl) ListTransactions(userID string, from, to *time.Time, page, li
 		return nil, 0, err
 	}
 
-	var result []model.Transaction
-	for _, t := range ts {
-		notes, _ := t.Notes()
-		result = append(result, model.Transaction{
-			ID:          t.ID,
-			UserID:      t.UserID,
-			AccountID:   t.AccountID,
-			CategoryID:  t.CategoryID,
-			Amount:      t.Amount,
-			Type:        t.Type,
-			Timestamp:   t.Date,
-			Date:        t.Date.Format("2006-01-02"),
-			Description: notes,
-			Notes:       notes,
-			CreatedAt:   t.CreatedAt,
-			UpdatedAt:   t.UpdatedAt,
-		})
+	result := make([]model.Transaction, 0, len(ts))
+	for i := range ts {
+		result = append(result, toModel(&ts[i]))
 	}
 	return result, total, nil
 }
 
 func (r *repoImpl) CreateTransaction(t model.Transaction) (*model.Transaction, error) {
-	var optional []db.TransactionSetParam
-	notesVal := t.Description
-	if notesVal == "" {
-		notesVal = t.Notes
-	}
-	if notesVal != "" {
-		optional = append(optional, db.Transaction.Notes.Set(notesVal))
-	}
-
 	tx, err := r.prisma.Prisma.Transaction.CreateOne(
 		db.Transaction.Amount.Set(t.Amount),
 		db.Transaction.Type.Set(t.Type),
@@ -98,26 +90,12 @@ func (r *repoImpl) CreateTransaction(t model.Transaction) (*model.Transaction, e
 		db.Transaction.User.Link(db.User.ID.Equals(t.UserID)),
 		db.Transaction.Category.Link(db.Category.ID.Equals(t.CategoryID)),
 		db.Transaction.Account.Link(db.Account.ID.Equals(t.AccountID)),
-		optional...
 	).Exec(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	notes, _ := tx.Notes()
-	return &model.Transaction{
-		ID:          tx.ID,
-		UserID:      tx.UserID,
-		AccountID:   tx.AccountID,
-		CategoryID:  tx.CategoryID,
-		Amount:      tx.Amount,
-		Type:        tx.Type,
-		Timestamp:   tx.Date,
-		Date:        tx.Date.Format("2006-01-02"),
-		Description: notes,
-		Notes:       notes,
-		CreatedAt:   tx.CreatedAt,
-		UpdatedAt:   tx.UpdatedAt,
-	}, nil
+	m := toModel(tx)
+	return &m, nil
 }
 
 func (r *repoImpl) GetTransactionByID(id string) (*model.Transaction, error) {
@@ -130,66 +108,28 @@ func (r *repoImpl) GetTransactionByID(id string) (*model.Transaction, error) {
 		}
 		return nil, err
 	}
-	notes, _ := t.Notes()
-	return &model.Transaction{
-		ID:          t.ID,
-		UserID:      t.UserID,
-		AccountID:   t.AccountID,
-		CategoryID:  t.CategoryID,
-		Amount:      t.Amount,
-		Type:        t.Type,
-		Timestamp:   t.Date,
-		Date:        t.Date.Format("2006-01-02"),
-		Description: notes,
-		Notes:       notes,
-		CreatedAt:   t.CreatedAt,
-		UpdatedAt:   t.UpdatedAt,
-	}, nil
+	m := toModel(t)
+	return &m, nil
 }
 
 func (r *repoImpl) UpdateTransaction(id string, t model.Transaction) (*model.Transaction, error) {
-	var updateParams []db.TransactionSetParam
-	updateParams = append(updateParams, db.Transaction.Amount.Set(t.Amount))
-	updateParams = append(updateParams, db.Transaction.Type.Set(t.Type))
-	updateParams = append(updateParams, db.Transaction.Date.Set(t.Timestamp))
-	updateParams = append(updateParams, db.Transaction.Category.Link(db.Category.ID.Equals(t.CategoryID)))
-	updateParams = append(updateParams, db.Transaction.Account.Link(db.Account.ID.Equals(t.AccountID)))
-
-	notesVal := t.Description
-	if notesVal == "" {
-		notesVal = t.Notes
-	}
-	if notesVal != "" {
-		updateParams = append(updateParams, db.Transaction.Notes.Set(notesVal))
-	}
-
 	tx, err := r.prisma.Prisma.Transaction.FindUnique(
 		db.Transaction.ID.Equals(id),
 	).Update(
-		updateParams...,
+		db.Transaction.Amount.Set(t.Amount),
+		db.Transaction.Type.Set(t.Type),
+		db.Transaction.Date.Set(t.Timestamp),
+		db.Transaction.Category.Link(db.Category.ID.Equals(t.CategoryID)),
+		db.Transaction.Account.Link(db.Account.ID.Equals(t.AccountID)),
 	).Exec(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	notes, _ := tx.Notes()
-	return &model.Transaction{
-		ID:          tx.ID,
-		UserID:      tx.UserID,
-		AccountID:   tx.AccountID,
-		CategoryID:  tx.CategoryID,
-		Amount:      tx.Amount,
-		Type:        tx.Type,
-		Timestamp:   tx.Date,
-		Date:        tx.Date.Format("2006-01-02"),
-		Description: notes,
-		Notes:       notes,
-		CreatedAt:   tx.CreatedAt,
-		UpdatedAt:   tx.UpdatedAt,
-	}, nil
+	m := toModel(tx)
+	return &m, nil
 }
 
 func (r *repoImpl) DeleteTransaction(id string) error {
 	_, err := r.prisma.Prisma.Transaction.FindUnique(db.Transaction.ID.Equals(id)).Delete().Exec(context.Background())
 	return err
 }
-

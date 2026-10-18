@@ -95,24 +95,7 @@ func (h *Handler) CreateTransaction(c *gin.Context) {
 		return
 	}
 	req.UserID = userID.(string)
-
-	// Map date to Timestamp
-	if req.Date != "" {
-		if t, err := time.Parse("2006-01-02", req.Date); err == nil {
-			req.Timestamp = t
-		} else if t, err := time.Parse(time.RFC3339, req.Date); err == nil {
-			req.Timestamp = t
-		} else {
-			req.Timestamp = time.Now()
-		}
-	} else {
-		req.Timestamp = time.Now()
-	}
-
-	// Map notes to Description
-	if req.Notes != "" {
-		req.Description = req.Notes
-	}
+	req.Timestamp = parseTransactionDate(req.Date)
 
 	tx, err := h.svc.CreateTransaction(c.Request.Context(), req)
 	if err != nil {
@@ -137,23 +120,7 @@ func (h *Handler) UpdateTransaction(c *gin.Context) {
 	}
 	req.ID = txID
 	req.UserID = userID.(string)
-
-	// Map date to Timestamp
-	if req.Date != "" {
-		if t, err := time.Parse("2006-01-02", req.Date); err == nil {
-			req.Timestamp = t
-		} else if t, err := time.Parse(time.RFC3339, req.Date); err == nil {
-			req.Timestamp = t
-		} else {
-			req.Timestamp = time.Now()
-		}
-	} else {
-		req.Timestamp = time.Now()
-	}
-
-	if req.Notes != "" {
-		req.Description = req.Notes
-	}
+	req.Timestamp = parseTransactionDate(req.Date)
 
 	tx, err := h.svc.UpdateTransaction(c.Request.Context(), userID.(string), req)
 	if err != nil {
@@ -176,4 +143,16 @@ func (h *Handler) DeleteTransaction(c *gin.Context) {
 		return
 	}
 	shared.SuccessResponse(c, "Transaction deleted", nil)
+}
+
+// parseTransactionDate accepts an RFC 3339 timestamp (fractional seconds allowed) or yyyy-MM-dd;
+// anything else falls back to now.
+func parseTransactionDate(s string) time.Time {
+	if t, err := time.Parse(time.RFC3339, s); err == nil {
+		return t.UTC()
+	}
+	if t, err := time.Parse("2006-01-02", s); err == nil {
+		return t
+	}
+	return time.Now().UTC()
 }
