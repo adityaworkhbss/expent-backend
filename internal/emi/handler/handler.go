@@ -2,12 +2,13 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"expent-backend/internal/emi/model"
 	"expent-backend/internal/emi/service"
 	"expent-backend/internal/shared"
+	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,6 +19,19 @@ type Handler struct {
 
 func NewHandler(svc *service.Service) *Handler {
 	return &Handler{svc: svc}
+}
+
+type emiReq struct {
+	Amount      shared.FlexFloat64 `json:"amount"`
+	Type        string             `json:"type"`
+	Name        string             `json:"name"`
+	StartDate   string             `json:"startDate"`
+	Date        string             `json:"date"`
+	Tenure      *shared.FlexInt    `json:"tenure"`
+	MonthsPaid  *shared.FlexInt    `json:"monthsPaid"`
+	CategoryID  *string            `json:"categoryId"`
+	AccountID   *string            `json:"accountId"`
+	Description *string            `json:"description"`
 }
 
 func (h *Handler) ListEmis(c *gin.Context) {
@@ -41,56 +55,18 @@ func (h *Handler) CreateEmi(c *gin.Context) {
 		return
 	}
 
-	bodyBytes, err := c.GetRawData()
+	reqs, err := decodeEmiReqs(c)
 	if err != nil {
-		shared.ErrorResponse(c, http.StatusBadRequest, "Failed to read request body")
+		shared.ErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
-	}
-
-	bodyStr := strings.TrimSpace(string(bodyBytes))
-	type EmiReq struct {
-		Amount      float64 `json:"amount" binding:"required"`
-		Type        string  `json:"type" binding:"required"`
-		CategoryID  *string `json:"categoryId"`
-		AccountID   *string `json:"accountId"`
-		Date        string  `json:"date" binding:"required"`
-		Description *string `json:"description"`
-	}
-
-	var reqs []EmiReq
-
-	if strings.HasPrefix(bodyStr, "[") {
-		if err := json.Unmarshal(bodyBytes, &reqs); err != nil {
-			shared.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON array payload: "+err.Error())
-			return
-		}
-	} else {
-		var single EmiReq
-		if err := json.Unmarshal(bodyBytes, &single); err != nil {
-			shared.ErrorResponse(c, http.StatusBadRequest, "Invalid JSON object payload: "+err.Error())
-			return
-		}
-		reqs = append(reqs, single)
 	}
 
 	var createdEmis []interface{}
 	for _, req := range reqs {
-		if req.Amount <= 0 || req.Type == "" || req.Date == "" {
-			shared.ErrorResponse(c, http.StatusBadRequest, "amount, type, and date are required")
+		e, err := req.toModel(userID.(string))
+		if err != nil {
+			shared.ErrorResponse(c, http.StatusBadRequest, err.Error())
 			return
-		}
-
-		t := parseDateHelper(req.Date)
-
-		e := model.Emi{
-			UserID:      userID.(string),
-			Amount:      req.Amount,
-			Type:        req.Type,
-			CategoryID:  req.CategoryID,
-			AccountID:   req.AccountID,
-			Date:        t,
-			DateStr:     t.Format("2006-01-02"),
-			Description: req.Description,
 		}
 
 		res, err := h.svc.CreateEmi(c.Request.Context(), e)
@@ -112,31 +88,22 @@ func (h *Handler) UpdateEmi(c *gin.Context) {
 	}
 	emiID := c.Param("id")
 
-	var req struct {
-		Amount      float64 `json:"amount" binding:"required"`
-		Type        string  `json:"type" binding:"required"`
-		CategoryID  *string `json:"categoryId"`
-		AccountID   *string `json:"accountId"`
-		Date        string  `json:"date" binding:"required"`
-		Description *string `json:"description"`
-	}
-
-	if err := c.ShouldBindJSON(&req); err != nil {
-		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
+	bodyBytes, err := c.GetRawData()
+	if err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Failed to read request body")
 		return
 	}
 
-	t := parseDateHelper(req.Date)
+	var req emiReq
+	if err := json.Unmarshal(bodyBytes, &req); err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload: "+err.Error())
+		return
+	}
 
-	e := model.Emi{
-		UserID:      userID.(string),
-		Amount:      req.Amount,
-		Type:        req.Type,
-		CategoryID:  req.CategoryID,
-		AccountID:   req.AccountID,
-		Date:        t,
-		DateStr:     t.Format("2006-01-02"),
-		Description: req.Description,
+	e, err := req.toModel(userID.(string))
+	if err != nil {
+		shared.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	res, err := h.svc.UpdateEmi(c.Request.Context(), userID.(string), emiID, e)
@@ -162,14 +129,91 @@ func (h *Handler) DeleteEmi(c *gin.Context) {
 	shared.SuccessResponse(c, "EMI deleted", nil)
 }
 
-func parseDateHelper(dStr string) time.Time {
-	t, err := time.Parse("2006-01-02", dStr)
-	if err == nil {
-		return t
+func decodeEmiReqs(c *gin.Context) ([]emiReq, error) {
+	bodyBytes, err := c.GetRawData()
+	if err != nil {
+		return nil, errors.New("Failed to read request body")
 	}
-	t, err = time.Parse(time.RFC3339, dStr)
-	if err == nil {
-		return t
+
+	bodyStr := strings.TrimSpace(string(bodyBytes))
+	var reqs []emiReq
+
+	if strings.HasPrefix(bodyStr, "[") {
+		if err := json.Unmarshal(bodyBytes, &reqs); err != nil {
+			return nil, fmt.Errorf("Invalid JSON array payload: %w", err)
+		}
+		return reqs, nil
 	}
-	return time.Now()
+
+	var single emiReq
+	if err := json.Unmarshal(bodyBytes, &single); err != nil {
+		return nil, fmt.Errorf("Invalid JSON object payload: %w", err)
+	}
+	return []emiReq{single}, nil
+}
+
+func (req emiReq) toModel(userID string) (model.Emi, error) {
+	amount := req.Amount.Float64()
+	if amount <= 0 {
+		return model.Emi{}, errRequired("amount must be a positive number")
+	}
+	if strings.TrimSpace(req.Type) == "" {
+		return model.Emi{}, errRequired("type is required")
+	}
+
+	dateStr := strings.TrimSpace(req.Date)
+	if dateStr == "" {
+		dateStr = strings.TrimSpace(req.StartDate)
+	}
+	t, err := shared.ParseFlexibleDate(dateStr)
+	if err != nil {
+		return model.Emi{}, err
+	}
+
+	name := strings.TrimSpace(req.Name)
+	var namePtr *string
+	if name != "" {
+		namePtr = &name
+	}
+
+	var descPtr *string
+	if req.Description != nil && strings.TrimSpace(*req.Description) != "" {
+		d := strings.TrimSpace(*req.Description)
+		descPtr = &d
+	} else if namePtr != nil {
+		descPtr = namePtr
+	}
+
+	dateFormatted := t.Format("2006-01-02")
+	return model.Emi{
+		UserID:      userID,
+		Amount:      amount,
+		Type:        req.Type,
+		CategoryID:  emptyToNil(req.CategoryID),
+		AccountID:   emptyToNil(req.AccountID),
+		Date:        t,
+		DateStr:     dateFormatted,
+		StartDate:   dateFormatted,
+		Name:        namePtr,
+		Description: descPtr,
+		Tenure:      shared.FlexIntPtr(req.Tenure),
+		MonthsPaid:  shared.FlexIntPtr(req.MonthsPaid),
+	}, nil
+}
+
+type simpleError string
+
+func (e simpleError) Error() string { return string(e) }
+
+func errRequired(msg string) error { return simpleError(msg) }
+
+func emptyToNil(v *string) *string {
+	if v == nil {
+		return nil
+	}
+	s := strings.TrimSpace(*v)
+	if s == "" {
+		return nil
+	}
+	return &s
 }

@@ -10,8 +10,12 @@ type Emi struct {
 	CategoryID  *string   `json:"categoryId"`
 	AccountID   *string   `json:"accountId"`
 	Date        time.Time `json:"-"`
-	DateStr     string    `json:"date"` // ISO string
+	DateStr     string    `json:"date"`
+	StartDate   string    `json:"startDate"`
+	Name        *string   `json:"name,omitempty"`
 	Description *string   `json:"description,omitempty"`
+	Tenure      *int      `json:"tenure,omitempty"`
+	MonthsPaid  *int      `json:"monthsPaid,omitempty"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }

@@ -23,34 +23,43 @@ func NewRepository(prismaClient *prisma.PrismaClient) Repository {
 	return &repoImpl{prisma: prismaClient}
 }
 
+func optionalString(v string, ok bool) *string {
+	if !ok || v == "" {
+		return nil
+	}
+	return &v
+}
+
+func optionalInt(v int, ok bool) *int {
+	if !ok {
+		return nil
+	}
+	return &v
+}
+
 func (r *repoImpl) mapEmiStruct(e *db.EmiModel) *model.Emi {
-	catID, _ := e.CategoryID()
-	accID, _ := e.AccountID()
-	desc, _ := e.Description()
+	catID, catOK := e.CategoryID()
+	accID, accOK := e.AccountID()
+	desc, descOK := e.Description()
+	name, nameOK := e.Name()
+	tenure, tenureOK := e.Tenure()
+	monthsPaid, monthsPaidOK := e.MonthsPaid()
 
-	var catIDPtr *string
-	if catID != "" {
-		catIDPtr = &catID
-	}
-	var accIDPtr *string
-	if accID != "" {
-		accIDPtr = &accID
-	}
-	var descPtr *string
-	if desc != "" {
-		descPtr = &desc
-	}
-
+	dateStr := e.Date.Format("2006-01-02")
 	return &model.Emi{
 		ID:          e.ID,
 		UserID:      e.UserID,
 		Amount:      e.Amount,
 		Type:        e.Type,
-		CategoryID:  catIDPtr,
-		AccountID:   accIDPtr,
+		CategoryID:  optionalString(catID, catOK),
+		AccountID:   optionalString(accID, accOK),
 		Date:        e.Date,
-		DateStr:     e.Date.Format("2006-01-02"),
-		Description: descPtr,
+		DateStr:     dateStr,
+		StartDate:   dateStr,
+		Name:        optionalString(name, nameOK),
+		Description: optionalString(desc, descOK),
+		Tenure:      optionalInt(tenure, tenureOK),
+		MonthsPaid:  optionalInt(monthsPaid, monthsPaidOK),
 		CreatedAt:   e.CreatedAt,
 		UpdatedAt:   e.UpdatedAt,
 	}
@@ -74,9 +83,7 @@ func (r *repoImpl) ListEmis(userID string) ([]model.Emi, error) {
 	return result, nil
 }
 
-func (r *repoImpl) CreateEmi(emi model.Emi) (*model.Emi, error) {
-	ctx := context.Background()
-
+func emiOptionalSets(emi model.Emi) []db.EmiSetParam {
 	var optionalParams []db.EmiSetParam
 	if emi.CategoryID != nil && *emi.CategoryID != "" {
 		optionalParams = append(optionalParams, db.Emi.Category.Link(db.Category.ID.Equals(*emi.CategoryID)))
@@ -87,13 +94,27 @@ func (r *repoImpl) CreateEmi(emi model.Emi) (*model.Emi, error) {
 	if emi.Description != nil {
 		optionalParams = append(optionalParams, db.Emi.Description.Set(*emi.Description))
 	}
+	if emi.Name != nil {
+		optionalParams = append(optionalParams, db.Emi.Name.Set(*emi.Name))
+	}
+	if emi.Tenure != nil {
+		optionalParams = append(optionalParams, db.Emi.Tenure.Set(*emi.Tenure))
+	}
+	if emi.MonthsPaid != nil {
+		optionalParams = append(optionalParams, db.Emi.MonthsPaid.Set(*emi.MonthsPaid))
+	}
+	return optionalParams
+}
+
+func (r *repoImpl) CreateEmi(emi model.Emi) (*model.Emi, error) {
+	ctx := context.Background()
 
 	tx, err := r.prisma.Prisma.Emi.CreateOne(
 		db.Emi.Amount.Set(emi.Amount),
 		db.Emi.Type.Set(emi.Type),
 		db.Emi.Date.Set(emi.Date),
 		db.Emi.User.Link(db.User.ID.Equals(emi.UserID)),
-		optionalParams...,
+		emiOptionalSets(emi)...,
 	).Exec(ctx)
 	if err != nil {
 		return nil, err
@@ -119,10 +140,11 @@ func (r *repoImpl) GetEmiByID(id string) (*model.Emi, error) {
 func (r *repoImpl) UpdateEmi(id string, emi model.Emi) (*model.Emi, error) {
 	ctx := context.Background()
 
-	var updateParams []db.EmiSetParam
-	updateParams = append(updateParams, db.Emi.Amount.Set(emi.Amount))
-	updateParams = append(updateParams, db.Emi.Type.Set(emi.Type))
-	updateParams = append(updateParams, db.Emi.Date.Set(emi.Date))
+	updateParams := []db.EmiSetParam{
+		db.Emi.Amount.Set(emi.Amount),
+		db.Emi.Type.Set(emi.Type),
+		db.Emi.Date.Set(emi.Date),
+	}
 
 	if emi.CategoryID != nil && *emi.CategoryID != "" {
 		updateParams = append(updateParams, db.Emi.Category.Link(db.Category.ID.Equals(*emi.CategoryID)))
@@ -140,6 +162,24 @@ func (r *repoImpl) UpdateEmi(id string, emi model.Emi) (*model.Emi, error) {
 		updateParams = append(updateParams, db.Emi.Description.Set(*emi.Description))
 	} else {
 		updateParams = append(updateParams, db.Emi.Description.SetOptional(nil))
+	}
+
+	if emi.Name != nil {
+		updateParams = append(updateParams, db.Emi.Name.Set(*emi.Name))
+	} else {
+		updateParams = append(updateParams, db.Emi.Name.SetOptional(nil))
+	}
+
+	if emi.Tenure != nil {
+		updateParams = append(updateParams, db.Emi.Tenure.Set(*emi.Tenure))
+	} else {
+		updateParams = append(updateParams, db.Emi.Tenure.SetOptional(nil))
+	}
+
+	if emi.MonthsPaid != nil {
+		updateParams = append(updateParams, db.Emi.MonthsPaid.Set(*emi.MonthsPaid))
+	} else {
+		updateParams = append(updateParams, db.Emi.MonthsPaid.SetOptional(nil))
 	}
 
 	tx, err := r.prisma.Prisma.Emi.FindUnique(
