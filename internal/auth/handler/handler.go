@@ -34,7 +34,7 @@ func (h *Handler) GoogleLogin(c *gin.Context) {
 		return
 	}
 	ctx := context.Background()
-	access, refresh, obs, email, name, err := h.svc.HandleGoogleLogin(ctx, req.IDToken, req.ID)
+	access, refresh, obs, email, name, userID, err := h.svc.HandleGoogleLogin(ctx, req.IDToken, req.ID)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 		return
@@ -45,6 +45,7 @@ func (h *Handler) GoogleLogin(c *gin.Context) {
 		"onboardingCount": obs,
 		"email":           email,
 		"name":            name,
+		"userId":          userID,
 	})
 }
 
@@ -58,7 +59,7 @@ func (h *Handler) TestLogin(c *gin.Context) {
 		return
 	}
 	ctx := context.Background()
-	access, refresh, obs, email, name, err := h.svc.TestLogin(ctx, req.Email)
+	access, refresh, obs, email, name, userID, err := h.svc.TestLogin(ctx, req.Email)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -69,6 +70,7 @@ func (h *Handler) TestLogin(c *gin.Context) {
 		"onboardingCount": obs,
 		"email":           email,
 		"name":            name,
+		"userId":          userID,
 	})
 }
 

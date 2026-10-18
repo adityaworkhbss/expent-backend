@@ -20,10 +20,10 @@ func NewService(repo repository.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string, id string) (accessToken string, refreshToken string, onboardingStep int, email string, name string, err error) {
+func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string, id string) (accessToken string, refreshToken string, onboardingStep int, email string, name string, userID string, err error) {
 	email, name, err = google.VerifyGoogleIDToken(ctx, idToken)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("google token validation failed: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("google token validation failed: %w", err)
 	}
 	if name == "" {
 		name = "User"
@@ -31,58 +31,58 @@ func (s *Service) HandleGoogleLogin(ctx context.Context, idToken string, id stri
 
 	user, err := s.repo.GetUserByEmail(email)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to get user: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
 		user, err = s.repo.CreateUser(email, name, id)
 		if err != nil {
-			return "", "", 0, "", "", fmt.Errorf("failed to create user: %w", err)
+			return "", "", 0, "", "", "", fmt.Errorf("failed to create user: %w", err)
 		}
 	}
 
 	accessToken, err = jwt.GenerateAccessToken(user.ID)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to generate access token: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 	refreshToken, err = jwt.GenerateRefreshToken(user.ID)
 	if err != nil {
-		return "", "", 0, "", "",
+		return "", "", 0, "", "", "",
 			fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 
 	if err = s.repo.StoreRefreshToken(user.ID, refreshToken); err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to store refresh token: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to store refresh token: %w", err)
 	}
-	return accessToken, refreshToken, user.OnboardingStep, user.Email, user.Name, nil
+	return accessToken, refreshToken, user.OnboardingStep, user.Email, user.Name, user.ID, nil
 }
 
 // TestLogin bypasses Google verification for local testing.
-func (s *Service) TestLogin(ctx context.Context, emailInput string) (accessToken string, refreshToken string, onboardingStep int, email string, name string, err error) {
+func (s *Service) TestLogin(ctx context.Context, emailInput string) (accessToken string, refreshToken string, onboardingStep int, email string, name string, userID string, err error) {
 	// Find or create user
 	user, err := s.repo.GetUserByEmail(emailInput)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to get user: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to get user: %w", err)
 	}
 	if user == nil {
 		user, err = s.repo.CreateUser(emailInput, "Test User", "")
 		if err != nil {
-			return "", "", 0, "", "", fmt.Errorf("failed to create user: %w", err)
+			return "", "", 0, "", "", "", fmt.Errorf("failed to create user: %w", err)
 		}
 	}
 	// Generate JWTs
 	accessToken, err = jwt.GenerateAccessToken(user.ID)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to generate access token: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 	refreshToken, err = jwt.GenerateRefreshToken(user.ID)
 	if err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to generate refresh token: %w", err)
 	}
 	// Store refresh token in DB
 	if err = s.repo.StoreRefreshToken(user.ID, refreshToken); err != nil {
-		return "", "", 0, "", "", fmt.Errorf("failed to store refresh token: %w", err)
+		return "", "", 0, "", "", "", fmt.Errorf("failed to store refresh token: %w", err)
 	}
-	return accessToken, refreshToken, user.OnboardingStep, user.Email, user.Name, nil
+	return accessToken, refreshToken, user.OnboardingStep, user.Email, user.Name, user.ID, nil
 }
 
 // HandleRefresh validates a refresh token and issues a new access token.

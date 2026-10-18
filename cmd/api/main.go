@@ -70,7 +70,7 @@ func main() {
 	budget.RegisterRoutes(protected, prismaClient)
 	category.RegisterRoutes(protected, prismaClient)
 	transaction.RegisterRoutes(protected, prismaClient)
-	parsetransaction.RegisterRoutes(protected)
+	parsetransaction.RegisterRoutes(protected, prismaClient)
 	dashboard.RegisterRoutes(protected, prismaClient)
 	usercustomization.RegisterRoutes(protected, prismaClient)
 	emi.RegisterRoutes(protected, prismaClient)

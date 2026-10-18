@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	accountrepo "expent-backend/internal/account/repository"
+	categoryrepo "expent-backend/internal/category/repository"
 	"expent-backend/internal/parse_transaction/model"
 
 	"google.golang.org/genai"
@@ -16,17 +18,52 @@ import (
 type Service struct {
 	geminiKey   string
 	geminiModel string
+	categories  categoryrepo.Repository
+	accounts    accountrepo.Repository
 }
 
-func NewService(geminiKey, geminiModel string) *Service {
+func NewService(geminiKey, geminiModel string, categories categoryrepo.Repository, accounts accountrepo.Repository) *Service {
 	return &Service{
 		geminiKey:   geminiKey,
 		geminiModel: geminiModel,
+		categories:  categories,
+		accounts:    accounts,
 	}
 }
 
-// ParseTransaction calls Gemini to extract structured transaction data from a raw SMS or text.
-func (s *Service) ParseTransaction(ctx context.Context, rawText string) (*model.ParsedTransaction, error) {
+func (s *Service) ParseTransaction(ctx context.Context, userID, rawText, today string, reqCats, reqAccs []model.CatalogItem) (*model.ParseResult, error) {
+	categories := reqCats
+	if len(categories) == 0 && s.categories != nil {
+		dbCats, err := s.categories.ListCategories(userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load categories: %w", err)
+		}
+		for _, c := range dbCats {
+			categories = append(categories, model.CatalogItem{ID: c.ID, Name: c.Name, Type: c.Type})
+		}
+	}
+
+	accounts := reqAccs
+	if len(accounts) == 0 && s.accounts != nil {
+		dbAccs, err := s.accounts.ListAccounts(userID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load accounts: %w", err)
+		}
+		for _, a := range dbAccs {
+			accounts = append(accounts, model.CatalogItem{ID: a.ID, Name: a.Name, Type: a.Type})
+		}
+	}
+
+	raw, err := s.callGemini(ctx, rawText, today, categories, accounts)
+	if err != nil {
+		return nil, err
+	}
+
+	result := finalizeParse(*raw, categories, accounts, today)
+	return &result, nil
+}
+
+func (s *Service) callGemini(ctx context.Context, rawText, today string, categories, accounts []model.CatalogItem) (*model.GeminiParsed, error) {
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
 		APIKey:  s.geminiKey,
 		Backend: genai.BackendGeminiAPI,
@@ -35,9 +72,8 @@ func (s *Service) ParseTransaction(ctx context.Context, rawText string) (*model.
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
 
-	prompt := buildPrompt(rawText)
+	prompt := buildPrompt(rawText, today, categories, accounts)
 
-	// Fallback chain of models in case of rate limits, quota issues, or model deprecation.
 	modelsToTry := []string{s.geminiModel}
 	for _, fallback := range []string{"gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.1-flash-lite"} {
 		if fallback != s.geminiModel {
@@ -60,8 +96,6 @@ func (s *Service) ParseTransaction(ctx context.Context, rawText string) (*model.
 		}
 
 		log.Printf("Gemini call failed with model %s (attempt %d/%d): %v", modelName, i+1, len(modelsToTry), genErr)
-
-		// If it's not the last model, wait a moment and try the next fallback
 		if i < len(modelsToTry)-1 {
 			time.Sleep(1 * time.Second)
 		}
@@ -76,7 +110,7 @@ func (s *Service) ParseTransaction(ctx context.Context, rawText string) (*model.
 		return nil, fmt.Errorf("gemini returned empty or non-JSON response")
 	}
 
-	var parsed model.ParsedTransaction
+	var parsed model.GeminiParsed
 	if err := json.Unmarshal([]byte(rawJSON), &parsed); err != nil {
 		return nil, fmt.Errorf("failed to parse gemini response as JSON: %w\nRaw: %s", err, rawJSON)
 	}
@@ -84,36 +118,60 @@ func (s *Service) ParseTransaction(ctx context.Context, rawText string) (*model.
 	return &parsed, nil
 }
 
-// buildPrompt constructs the prompt sent to Gemini.
-func buildPrompt(rawText string) string {
-	return fmt.Sprintf(`You are a financial transaction parser. Given a raw bank SMS, email, or text, extract structured transaction data.
+func buildPrompt(rawText, today string, categories, accounts []model.CatalogItem) string {
+	if strings.TrimSpace(today) == "" {
+		today = time.Now().Format("2006-01-02")
+	}
+	catsJSON, _ := json.Marshal(categories)
+	accsJSON, _ := json.Marshal(accounts)
+	if string(catsJSON) == "null" {
+		catsJSON = []byte("[]")
+	}
+	if string(accsJSON) == "null" {
+		accsJSON = []byte("[]")
+	}
+
+	return fmt.Sprintf(`You are a financial transaction parser. Given a user's spoken or typed note, extract structured transaction data.
+
+Today (user's local calendar date) is: %s
+
+The user has these categories. You MUST pick category_id from this list when possible. Never invent an id:
+%s
+
+The user has these accounts. You MUST pick account_id from this list when possible, or null if unknown. Never invent an id:
+%s
 
 Respond ONLY with a valid JSON object in exactly this format (no markdown, no explanation):
 {
-  "category": "<classification, e.g. Food, Shopping, Travel, Salary, Entertainment, Utilities, Other>",
-  "amount": <float>,
-  "type": "<expense|income>",
-  "description": "<merchant or narration>",
-  "date": "<ISO 8601 date if detected, else empty string>",
-  "currency": "<currency code, e.g. INR>",
+  "type": "EXPENSE or INCOME",
+  "amount": <positive number, or 0 if unknown>,
+  "category_id": "<id from the category list, or empty string>",
+  "category_name": "<name from the category list>",
+  "account_id": "<id from the account list, or null>",
+  "account_name": "<name from the account list, or empty string>",
+  "payment_method": "<UPI, CARD, CASH, NETBANKING, or empty string>",
+  "description": "<short description>",
+  "merchant": "<merchant if known>",
+  "note": "<same as description unless a longer note is present>",
+  "date": "<yyyy-MM-dd, never empty, never in the future>",
+  "currency": "INR",
   "confidence": <0.0 to 1.0>
 }
 
 Rules:
-- "category" should be a best guess classification (e.g. Food, Shopping, Travel, Salary, Entertainment, Utilities, Other).
-- "type" must be either "expense" (money deducted/debited) or "income" (money credited/received).
-- "amount" must be a positive number.
-- If you cannot determine a field, use an empty string or 0.
-- "confidence" represents how confident you are in the extraction (1.0 = very confident).
+- type must be EXPENSE or INCOME using those exact uppercase values.
+- Resolve relative dates like "today" and "yesterday" against the user's today (%s). Do not return a future date.
+- amount must be a positive number when a spend/credit amount is present.
+- If amount or type cannot be determined, still return JSON with amount 0 and/or empty type.
+- Pick the closest real category (e.g. Uber -> Travel) using the provided list. Do not make up category names.
+- Pick a real account if the text names one (e.g. HDFC). Otherwise account_id should be null.
 
 Raw text to parse:
-"%s"`, rawText)
+"%s"`, today, string(catsJSON), string(accsJSON), today, rawText)
 }
 
-// extractJSON tries to extract a JSON object from the model's response.
 func extractJSON(text string) string {
 	text = strings.TrimSpace(text)
-	// Strip markdown code fences if present
 	text = strings.TrimPrefix(text, "```json")
 	text = strings.TrimPrefix(text, "```")
 	text = strings.TrimSuffix(text, "```")

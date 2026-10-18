@@ -12,6 +12,9 @@ type AuthResponse struct {
 	AccessToken     string `json:"accessToken"`
 	RefreshToken    string `json:"refreshToken,omitempty"`
 	OnboardingCount int    `json:"onboardingCount"`
+	Email           string `json:"email,omitempty"`
+	Name            string `json:"name,omitempty"`
+	UserID          string `json:"userId,omitempty"`
 }
 
 type OnboardingStepRequestDto struct {

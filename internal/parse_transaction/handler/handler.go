@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"expent-backend/internal/parse_transaction/model"
 	"expent-backend/internal/parse_transaction/service"
@@ -19,8 +20,13 @@ func NewHandler(svc *service.Service) *Handler {
 }
 
 // ParseTransaction handles POST /parse-transaction
-// It accepts a raw bank SMS or text and returns structured transaction data using Gemini AI.
 func (h *Handler) ParseTransaction(c *gin.Context) {
+	userID, ok := c.Get("userId")
+	if !ok {
+		shared.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated")
+		return
+	}
+
 	var req model.ParseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		shared.ErrorResponse(c, http.StatusBadRequest, "Invalid payload")
@@ -36,11 +42,22 @@ func (h *Handler) ParseTransaction(c *gin.Context) {
 		return
 	}
 
-	parsed, err := h.svc.ParseTransaction(c.Request.Context(), text)
+	today := req.Today
+	if today == "" {
+		today = time.Now().Format("2006-01-02")
+	}
+
+	parsed, err := h.svc.ParseTransaction(c.Request.Context(), userID.(string), text, today, req.Categories, req.Accounts)
 	if err != nil {
 		shared.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	shared.SuccessResponse(c, "Transaction parsed successfully", parsed)
+	c.JSON(http.StatusOK, gin.H{
+		"success":                 true,
+		"message":                 "Transaction parsed successfully",
+		"requires_user_input":     parsed.RequiresUserInput,
+		"missing_required_fields": parsed.MissingRequiredFields,
+		"data":                    parsed.Data,
+	})
 }
