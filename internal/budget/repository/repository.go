@@ -39,9 +39,7 @@ func (r *repoImpl) ListBudgets(userID string) ([]model.Budget, error) {
 			Amount:       b.LimitAmount,
 			Period:       b.PeriodType,
 			StartDate:    b.StartDate,
-			EndDate:      b.EndDate,
 			StartDateStr: b.StartDate.Format("2006-01-02"),
-			EndDateStr:   b.EndDate.Format("2006-01-02"),
 		})
 	}
 	return result, nil
@@ -52,7 +50,6 @@ func (r *repoImpl) CreateBudget(budget model.Budget) (*model.Budget, error) {
 		db.Budget.PeriodType.Set(budget.Period),
 		db.Budget.LimitAmount.Set(budget.Amount),
 		db.Budget.StartDate.Set(budget.StartDate),
-		db.Budget.EndDate.Set(budget.EndDate),
 		db.Budget.User.Link(db.User.ID.Equals(budget.UserID)),
 		db.Budget.Category.Link(db.Category.ID.Equals(budget.CategoryID)),
 	).Exec(context.Background())
@@ -66,9 +63,7 @@ func (r *repoImpl) CreateBudget(budget model.Budget) (*model.Budget, error) {
 		Amount:       b.LimitAmount,
 		Period:       b.PeriodType,
 		StartDate:    b.StartDate,
-		EndDate:      b.EndDate,
 		StartDateStr: b.StartDate.Format("2006-01-02"),
-		EndDateStr:   b.EndDate.Format("2006-01-02"),
 	}, nil
 }
 
@@ -89,9 +84,7 @@ func (r *repoImpl) GetBudgetByID(id string) (*model.Budget, error) {
 		Amount:       b.LimitAmount,
 		Period:       b.PeriodType,
 		StartDate:    b.StartDate,
-		EndDate:      b.EndDate,
 		StartDateStr: b.StartDate.Format("2006-01-02"),
-		EndDateStr:   b.EndDate.Format("2006-01-02"),
 	}, nil
 }
 
@@ -102,7 +95,6 @@ func (r *repoImpl) UpdateBudget(id string, budget model.Budget) (*model.Budget, 
 		db.Budget.PeriodType.Set(budget.Period),
 		db.Budget.LimitAmount.Set(budget.Amount),
 		db.Budget.StartDate.Set(budget.StartDate),
-		db.Budget.EndDate.Set(budget.EndDate),
 		db.Budget.Category.Link(db.Category.ID.Equals(budget.CategoryID)),
 	).Exec(context.Background())
 	if err != nil {
@@ -115,9 +107,7 @@ func (r *repoImpl) UpdateBudget(id string, budget model.Budget) (*model.Budget, 
 		Amount:       b.LimitAmount,
 		Period:       b.PeriodType,
 		StartDate:    b.StartDate,
-		EndDate:      b.EndDate,
 		StartDateStr: b.StartDate.Format("2006-01-02"),
-		EndDateStr:   b.EndDate.Format("2006-01-02"),
 	}, nil
 }
 

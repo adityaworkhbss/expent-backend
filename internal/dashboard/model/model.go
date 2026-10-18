@@ -40,5 +40,4 @@ type BudgetUtilization struct {
 	LimitAmount  float64 `json:"limitAmount"`
 	SpentAmount  float64 `json:"spentAmount"`
 	StartDate    string  `json:"startDate"`
-	EndDate      string  `json:"endDate"`
 }

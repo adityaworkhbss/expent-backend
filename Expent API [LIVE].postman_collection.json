@@ -1022,7 +1022,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Budgets fetched\",\n  \"data\": [\n    {\n      \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n      \"periodType\": \"monthly\",\n      \"limitAmount\": 1500,\n      \"startDate\": \"2026-06-01T00:00:00Z\",\n      \"endDate\": \"2026-06-30T00:00:00Z\"\n    }\n  ]\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Budgets fetched\",\n  \"data\": [\n    {\n      \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n      \"periodType\": \"monthly\",\n      \"limitAmount\": 1500,\n      \"startDate\": \"2026-06-01T00:00:00Z\"\n    }\n  ]\n}"
                 }
               ]
             },
@@ -1038,7 +1038,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 1500.00,\n  \"startDate\": \"2026-06-01\",\n  \"endDate\": \"2026-06-30\"\n}"
+                  "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 1500.00,\n  \"startDate\": \"2026-06-01\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/budgets",
@@ -1064,7 +1064,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 1500.00,\n  \"startDate\": \"2026-06-01\",\n  \"endDate\": \"2026-06-30\"\n}"
+                      "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 1500.00,\n  \"startDate\": \"2026-06-01\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/budgets",
@@ -1087,7 +1087,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Budgets created\",\n  \"data\": [\n    {\n      \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n      \"periodType\": \"monthly\",\n      \"limitAmount\": 1500,\n      \"startDate\": \"2026-06-01T00:00:00Z\",\n      \"endDate\": \"2026-06-30T00:00:00Z\"\n    }\n  ]\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Budgets created\",\n  \"data\": [\n    {\n      \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n      \"periodType\": \"monthly\",\n      \"limitAmount\": 1500,\n      \"startDate\": \"2026-06-01T00:00:00Z\"\n    }\n  ]\n}"
                 }
               ]
             },
@@ -1152,7 +1152,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Budgets created\",\n  \"data\": [\n    {\n      \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n      \"periodType\": \"monthly\",\n      \"limitAmount\": 800,\n      \"startDate\": \"2026-06-26T00:00:00Z\",\n      \"endDate\": \"2026-07-26T00:00:00Z\"\n    },\n    {\n      \"id\": \"f3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"a8b2c9d0-1c39-4414-b13c-bf5e729a6b8e\",\n      \"periodType\": \"weekly\",\n      \"limitAmount\": 100,\n      \"startDate\": \"2026-06-26T00:00:00Z\",\n      \"endDate\": \"2026-07-26T00:00:00Z\"\n    }\n  ]\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Budgets created\",\n  \"data\": [\n    {\n      \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n      \"periodType\": \"monthly\",\n      \"limitAmount\": 800,\n      \"startDate\": \"2026-06-26T00:00:00Z\"\n    },\n    {\n      \"id\": \"f3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n      \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n      \"categoryId\": \"a8b2c9d0-1c39-4414-b13c-bf5e729a6b8e\",\n      \"periodType\": \"weekly\",\n      \"limitAmount\": 100,\n      \"startDate\": \"2026-06-26T00:00:00Z\"\n    }\n  ]\n}"
                 }
               ]
             },
@@ -1168,7 +1168,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 2000.00,\n  \"startDate\": \"2026-06-01\",\n  \"endDate\": \"2026-06-30\"\n}"
+                  "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 2000.00,\n  \"startDate\": \"2026-06-01\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/budgets/{{budgetId}}",
@@ -1195,7 +1195,7 @@
                     ],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 2000.00,\n  \"startDate\": \"2026-06-01\",\n  \"endDate\": \"2026-06-30\"\n}"
+                      "raw": "{\n  \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n  \"periodType\": \"monthly\",\n  \"limitAmount\": 2000.00,\n  \"startDate\": \"2026-06-01\"\n}"
                     },
                     "url": {
                       "raw": "{{baseUrl}}/budgets/{{budgetId}}",
@@ -1219,7 +1219,7 @@
                     }
                   ],
                   "cookie": [],
-                  "body": "{\n  \"success\": true,\n  \"message\": \"Budget updated\",\n  \"data\": {\n    \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n    \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n    \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n    \"periodType\": \"monthly\",\n    \"limitAmount\": 2000,\n    \"startDate\": \"2026-06-01T00:00:00Z\",\n    \"endDate\": \"2026-06-30T00:00:00Z\"\n  }\n}"
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Budget updated\",\n  \"data\": {\n    \"id\": \"e3d7a8d5-1c39-4414-b13c-bf5e729a6b8e\",\n    \"userId\": \"5ccc48cf-a77f-47c8-af43-b97db69c027c\",\n    \"categoryId\": \"c8d19760-449e-4c74-9f89-c88fbf0280eb\",\n    \"periodType\": \"monthly\",\n    \"limitAmount\": 2000,\n    \"startDate\": \"2026-06-01T00:00:00Z\"\n  }\n}"
                 }
               ]
             },

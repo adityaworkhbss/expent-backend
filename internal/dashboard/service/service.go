@@ -77,9 +77,9 @@ func (s *Service) GetDashboard(ctx context.Context, userID string) (*model.Dashb
 
 	var budgetUtilization []model.BudgetUtilization
 	for _, b := range budgets {
-		// Get expense transactions for this budget's category and date range
+		// Budgets are monthly with no end date, so measure them against the current month
 		budgetTxs, err := s.repo.GetTransactionsByCategoryAndDateRange(
-			userID, b.CategoryID, b.StartDate, b.EndDate,
+			userID, b.CategoryID, monthStart, monthEnd,
 		)
 		if err != nil {
 			zap.L().Error("failed to get budget transactions",
@@ -108,7 +108,6 @@ func (s *Service) GetDashboard(ctx context.Context, userID string) (*model.Dashb
 			LimitAmount:  b.LimitAmount,
 			SpentAmount:  spent,
 			StartDate:    b.StartDate.Format("2006-01-02"),
-			EndDate:      b.EndDate.Format("2006-01-02"),
 		})
 	}
 

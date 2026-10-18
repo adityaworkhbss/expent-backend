@@ -76,7 +76,6 @@ model Budget {
   periodType  String
   limitAmount Float
   startDate   DateTime
-  endDate     DateTime
 
   user       User     @relation(fields: [userId], references: [id])
   category   Category @relation(fields: [categoryId], references: [id])

@@ -68,7 +68,6 @@ func (h *Handler) CreateBudget(c *gin.Context) {
 		PeriodType  string  `json:"periodType" binding:"required"`
 		LimitAmount float64 `json:"limitAmount" binding:"required"`
 		StartDate   string  `json:"startDate"`
-		EndDate     string  `json:"endDate"`
 	}
 
 	var reqs []BudgetReq
@@ -95,7 +94,6 @@ func (h *Handler) CreateBudget(c *gin.Context) {
 		}
 
 		startDate := parseDateHelper(req.StartDate, time.Now())
-		endDate := parseDateHelper(req.EndDate, startDate.Add(30*24*time.Hour))
 
 		b := model.Budget{
 			UserID:     userID.(string),
@@ -103,7 +101,6 @@ func (h *Handler) CreateBudget(c *gin.Context) {
 			Period:     req.PeriodType,
 			Amount:     req.LimitAmount,
 			StartDate:  startDate,
-			EndDate:    endDate,
 		}
 
 		res, err := h.svc.CreateBudget(c.Request.Context(), b)
@@ -130,7 +127,6 @@ func (h *Handler) UpdateBudget(c *gin.Context) {
 		PeriodType  string  `json:"periodType" binding:"required"`
 		LimitAmount float64 `json:"limitAmount" binding:"required"`
 		StartDate   string  `json:"startDate"`
-		EndDate     string  `json:"endDate"`
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -144,7 +140,6 @@ func (h *Handler) UpdateBudget(c *gin.Context) {
 	}
 
 	startDate := parseDateHelper(req.StartDate, time.Now())
-	endDate := parseDateHelper(req.EndDate, startDate.Add(30*24*time.Hour))
 
 	b := model.Budget{
 		UserID:     userID.(string),
@@ -152,7 +147,6 @@ func (h *Handler) UpdateBudget(c *gin.Context) {
 		Period:     req.PeriodType,
 		Amount:     req.LimitAmount,
 		StartDate:  startDate,
-		EndDate:    endDate,
 	}
 
 	res, err := h.svc.UpdateBudget(c.Request.Context(), userID.(string), budgetID, b)
