@@ -11,6 +11,7 @@ import (
 
 	"expent-backend/configs"
 	"expent-backend/internal/account"
+	"expent-backend/internal/admin"
 	"expent-backend/internal/auth"
 	"expent-backend/internal/budget"
 	"expent-backend/internal/category"
@@ -19,6 +20,7 @@ import (
 	"expent-backend/internal/emi"
 	"expent-backend/internal/infrastructure/prisma"
 	"expent-backend/internal/middleware"
+	"expent-backend/internal/notification"
 	parsetransaction "expent-backend/internal/parse_transaction"
 	"expent-backend/internal/transaction"
 	usercustomization "expent-backend/internal/user_customization"
@@ -62,6 +64,7 @@ func main() {
 	// Public routes
 	api := r.Group("/" + configs.AppConfig.API_PREFIX)
 	auth.RegisterRoutes(api, prismaClient)
+	admin.RegisterRoutes(api, prismaClient)
 
 	// Protected routes (requires JWT)
 	protected := api.Group("")
@@ -76,6 +79,9 @@ func main() {
 	usercustomization.RegisterRoutes(protected, prismaClient)
 	emi.RegisterRoutes(protected, prismaClient)
 	device_token.RegisterRoutes(protected, prismaClient)
+
+	// Admin-only routes (AdminAuth applied inside RegisterRoutes)
+	notification.RegisterRoutes(api, prismaClient)
 
 	// Start server
 	port := configs.AppConfig.PORT

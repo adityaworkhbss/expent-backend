@@ -10,16 +10,29 @@ import (
 
 type Claims struct {
 	UserID string `json:"sub"`
+	Role   string `json:"role,omitempty"`
 	jwt.RegisteredClaims
 }
 
 func GenerateAccessToken(userID string) (string, error) {
+	return generateAccessToken(userID, "")
+}
+
+// GenerateAdminAccessToken issues an access token carrying role=admin, used to
+// gate admin-only endpoints (e.g. notification creation) separately from
+// regular user tokens.
+func GenerateAdminAccessToken(adminID string) (string, error) {
+	return generateAccessToken(adminID, "admin")
+}
+
+func generateAccessToken(subjectID, role string) (string, error) {
 	expiresIn, err := time.ParseDuration(configs.AppConfig.JWT_EXPIRES_IN)
 	if err != nil {
 		expiresIn = 15 * time.Minute // fallback default
 	}
 	claims := Claims{
-		UserID: userID,
+		UserID: subjectID,
+		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

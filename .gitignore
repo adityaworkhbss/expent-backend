@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Firebase service account credentials — NEVER commit
+firebase-service-account*.json
+
 # Go build artifacts
 /bin/
 /dist/
