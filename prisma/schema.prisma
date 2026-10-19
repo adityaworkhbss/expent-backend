@@ -19,6 +19,7 @@ model User {
   budgets          Budget[]
   customizations   UserCustomization?
   emis             Emi[]
+  deviceTokens     DeviceToken[]
 }
 
 model RefreshToken {
@@ -106,5 +107,16 @@ model Emi {
   user        User      @relation(fields: [userId], references: [id])
   category    Category? @relation(fields: [categoryId], references: [id])
   account     Account?  @relation(fields: [accountId], references: [id])
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 

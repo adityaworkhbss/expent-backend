@@ -15,6 +15,7 @@ import (
 	"expent-backend/internal/budget"
 	"expent-backend/internal/category"
 	"expent-backend/internal/dashboard"
+	"expent-backend/internal/device_token"
 	"expent-backend/internal/emi"
 	"expent-backend/internal/infrastructure/prisma"
 	"expent-backend/internal/middleware"
@@ -74,6 +75,7 @@ func main() {
 	dashboard.RegisterRoutes(protected, prismaClient)
 	usercustomization.RegisterRoutes(protected, prismaClient)
 	emi.RegisterRoutes(protected, prismaClient)
+	device_token.RegisterRoutes(protected, prismaClient)
 
 	// Start server
 	port := configs.AppConfig.PORT
