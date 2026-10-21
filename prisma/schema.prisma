@@ -20,6 +20,7 @@ model User {
   customizations   UserCustomization?
   emis             Emi[]
   deviceTokens     DeviceToken[]
+  feedbacks        Feedback[]
 }
 
 model RefreshToken {
@@ -116,6 +117,17 @@ model DeviceToken {
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String
+  rating    Int
+  message   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
 }

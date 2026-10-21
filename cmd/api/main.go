@@ -18,6 +18,7 @@ import (
 	"expent-backend/internal/dashboard"
 	"expent-backend/internal/device_token"
 	"expent-backend/internal/emi"
+	"expent-backend/internal/feedback"
 	"expent-backend/internal/infrastructure/prisma"
 	"expent-backend/internal/middleware"
 	"expent-backend/internal/notification"
@@ -79,6 +80,7 @@ func main() {
 	usercustomization.RegisterRoutes(protected, prismaClient)
 	emi.RegisterRoutes(protected, prismaClient)
 	device_token.RegisterRoutes(protected, prismaClient)
+	feedback.RegisterRoutes(protected, prismaClient)
 
 	// Admin-only routes (AdminAuth applied inside RegisterRoutes)
 	notification.RegisterRoutes(api, prismaClient)
