@@ -12,6 +12,7 @@ import (
 	"expent-backend/configs"
 	"expent-backend/internal/account"
 	"expent-backend/internal/admin"
+	appconfig "expent-backend/internal/app_config"
 	"expent-backend/internal/auth"
 	"expent-backend/internal/budget"
 	"expent-backend/internal/category"
@@ -84,6 +85,7 @@ func main() {
 
 	// Admin-only routes (AdminAuth applied inside RegisterRoutes)
 	notification.RegisterRoutes(api, prismaClient)
+	appconfig.RegisterRoutes(api)
 
 	// Start server
 	port := configs.AppConfig.PORT

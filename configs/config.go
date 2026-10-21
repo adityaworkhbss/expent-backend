@@ -9,6 +9,11 @@ import (
 
 type Config struct {
 	API_PREFIX                    string
+	CF_ACCOUNT_ID                 string
+	CF_API_TOKEN                  string
+	CF_KV_CONFIG_KEY              string
+	CF_KV_NAMESPACE_ID            string
+	CONFIG_PUBLIC_URL             string
 	DATABASE_URL                  string
 	DEFAULT_SALARY_AMOUNT         string
 	DEFAULT_SALARY_DAY            string
@@ -41,6 +46,11 @@ func LoadConfig() {
 
 	AppConfig = Config{
 		API_PREFIX:                    getEnv("API_PREFIX", "api/v1"),
+		CF_ACCOUNT_ID:                 getEnv("CF_ACCOUNT_ID", ""),
+		CF_API_TOKEN:                  getEnv("CF_API_TOKEN", ""),
+		CF_KV_CONFIG_KEY:              getEnv("CF_KV_CONFIG_KEY", "remote_config"),
+		CF_KV_NAMESPACE_ID:            getEnv("CF_KV_NAMESPACE_ID", ""),
+		CONFIG_PUBLIC_URL:             getEnv("CONFIG_PUBLIC_URL", "https://expent-config.adityaworkhbss.workers.dev/"),
 		DATABASE_URL:                  getEnv("DATABASE_URL", ""),
 		DEFAULT_SALARY_AMOUNT:         getEnv("DEFAULT_SALARY_AMOUNT", "87500"),
 		DEFAULT_SALARY_DAY:            getEnv("DEFAULT_SALARY_DAY", "10"),
