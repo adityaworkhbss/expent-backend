@@ -23,4 +23,5 @@ func RegisterRoutes(r *gin.RouterGroup, prismaClient *prisma.PrismaClient) {
 	protected := authGroup.Group("")
 	protected.Use(middleware.Auth())
 	protected.POST("/onboarding/increment", h.IncrementOnboarding)
+	protected.DELETE("/account", h.DeleteAccount)
 }

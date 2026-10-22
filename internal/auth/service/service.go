@@ -109,3 +109,9 @@ func (s *Service) HandleRefresh(ctx context.Context, refreshToken string) (acces
 func (s *Service) UpdateOnboardingStep(ctx context.Context, userID string, step int) error {
 	return s.repo.UpdateOnboardingStep(userID, step)
 }
+
+// DeleteAccount permanently removes the user and all their data. Their refresh tokens go with it,
+// so no new access tokens can be issued; access tokens already issued expire on their own.
+func (s *Service) DeleteAccount(ctx context.Context, userID string) error {
+	return s.repo.DeleteUserAndData(ctx, userID)
+}

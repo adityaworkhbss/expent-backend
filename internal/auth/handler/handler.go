@@ -115,3 +115,19 @@ func (h *Handler) IncrementOnboarding(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+// DeleteAccount handles DELETE /auth/account: permanently deletes the signed-in user and all their data.
+func (h *Handler) DeleteAccount(c *gin.Context) {
+	userId, exists := c.Get("userId")
+	if !exists {
+		shared.ErrorResponse(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if err := h.svc.DeleteAccount(c.Request.Context(), userId.(string)); err != nil {
+		shared.ErrorResponse(c, http.StatusInternalServerError, "Failed to delete account")
+		return
+	}
+
+	shared.SuccessResponse(c, "Account deleted", nil)
+}

@@ -16,6 +16,7 @@ type Repository interface {
 	StoreRefreshToken(userID, token string) error
 	GetRefreshToken(token string) (*model.RefreshToken, error)
 	UpdateOnboardingStep(userID string, step int) error
+	DeleteUserAndData(ctx context.Context, userID string) error
 }
 
 type repoImpl struct {
@@ -103,4 +104,28 @@ func (r *repoImpl) UpdateOnboardingStep(userID string, step int) error {
 		zap.S().Error("failed to update onboarding step", zap.Error(err))
 	}
 	return err
+}
+
+// DeleteUserAndData permanently deletes a user and everything they own, in one database transaction.
+// The schema has no cascading deletes, so rows that reference others go first: transactions, EMIs and
+// budgets point at categories/accounts, which point at the user.
+func (r *repoImpl) DeleteUserAndData(ctx context.Context, userID string) error {
+	client := r.prisma.Prisma
+	err := client.Prisma.Transaction(
+		client.Transaction.FindMany(db.Transaction.UserID.Equals(userID)).Delete().Tx(),
+		client.Emi.FindMany(db.Emi.UserID.Equals(userID)).Delete().Tx(),
+		client.Budget.FindMany(db.Budget.UserID.Equals(userID)).Delete().Tx(),
+		client.Category.FindMany(db.Category.UserID.Equals(userID)).Delete().Tx(),
+		client.Account.FindMany(db.Account.UserID.Equals(userID)).Delete().Tx(),
+		client.UserCustomization.FindMany(db.UserCustomization.UserID.Equals(userID)).Delete().Tx(),
+		client.DeviceToken.FindMany(db.DeviceToken.UserID.Equals(userID)).Delete().Tx(),
+		client.Feedback.FindMany(db.Feedback.UserID.Equals(userID)).Delete().Tx(),
+		client.RefreshToken.FindMany(db.RefreshToken.UserID.Equals(userID)).Delete().Tx(),
+		client.User.FindMany(db.User.ID.Equals(userID)).Delete().Tx(),
+	).Exec(ctx)
+	if err != nil {
+		zap.S().Error("failed to delete user and data", zap.String("userId", userID), zap.Error(err))
+		return err
+	}
+	return nil
 }
