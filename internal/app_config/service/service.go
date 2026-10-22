@@ -34,11 +34,19 @@ type Service struct {
 	kv        *cloudflare.KVClient
 	key       string
 	publicURL string
+	// Shared key the config worker requires (X-Config-Key)
+	publicKey string
 	http      *http.Client
 }
 
-func NewService(kv *cloudflare.KVClient, key, publicURL string) *Service {
-	return &Service{kv: kv, key: key, publicURL: publicURL, http: &http.Client{Timeout: 20 * time.Second}}
+func NewService(kv *cloudflare.KVClient, key, publicURL, publicKey string) *Service {
+	return &Service{
+		kv:        kv,
+		key:       key,
+		publicURL: publicURL,
+		publicKey: publicKey,
+		http:      &http.Client{Timeout: 20 * time.Second},
+	}
 }
 
 func (s *Service) Get(ctx context.Context) (*AppConfig, error) {
@@ -101,6 +109,9 @@ func (s *Service) fetchPublic(ctx context.Context) (json.RawMessage, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.publicURL, nil)
 	if err != nil {
 		return nil, err
+	}
+	if s.publicKey != "" {
+		req.Header.Set("X-Config-Key", s.publicKey)
 	}
 	resp, err := s.http.Do(req)
 	if err != nil {

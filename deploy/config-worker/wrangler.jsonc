@@ -1,0 +1,21 @@
+// Deploys worker.js as the existing "expent-config" Worker, replacing its static-assets-only version
+// (those can't have bindings). Same name, so the URL the app uses doesn't change.
+// Run from this folder: npx wrangler deploy
+{
+  "name": "expent-config",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "kv_namespaces": [
+    {
+      "binding": "CONFIG_KV",
+      // KV namespace ID from the dashboard (same value as the backend's CF_KV_NAMESPACE_ID)
+      "id": "75e947a1a7c64f7d9a5ecb3f417f7dba"
+    }
+  ],
+  // CONFIG_API_KEY is a secret, not a var: set it with `npx wrangler secret put CONFIG_API_KEY`
+  "vars": {
+    // "false" = only log requests without the right key (while older app versions update); then "true"
+    "REQUIRE_CONFIG_KEY": "true"
+  }
+}

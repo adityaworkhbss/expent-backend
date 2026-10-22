@@ -13,6 +13,7 @@ type Config struct {
 	CF_API_TOKEN                  string
 	CF_KV_CONFIG_KEY              string
 	CF_KV_NAMESPACE_ID            string
+	CONFIG_API_KEY                string
 	CONFIG_PUBLIC_URL             string
 	DATABASE_URL                  string
 	DEFAULT_SALARY_AMOUNT         string
@@ -50,6 +51,7 @@ func LoadConfig() {
 		CF_API_TOKEN:                  getEnv("CF_API_TOKEN", ""),
 		CF_KV_CONFIG_KEY:              getEnv("CF_KV_CONFIG_KEY", "remote_config"),
 		CF_KV_NAMESPACE_ID:            getEnv("CF_KV_NAMESPACE_ID", ""),
+		CONFIG_API_KEY:                getEnv("CONFIG_API_KEY", ""),
 		CONFIG_PUBLIC_URL:             getEnv("CONFIG_PUBLIC_URL", "https://expent-config.adityaworkhbss.workers.dev/"),
 		DATABASE_URL:                  getEnv("DATABASE_URL", ""),
 		DEFAULT_SALARY_AMOUNT:         getEnv("DEFAULT_SALARY_AMOUNT", "87500"),
